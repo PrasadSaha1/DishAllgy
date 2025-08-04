@@ -1,0 +1,51 @@
+.base-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #212529;
+  color: white;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Keep font size consistent */
+.brand-title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.25rem;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+.base-main {
+  flex: 1;
+  padding: 6rem 1rem 1.5rem; /* top padding compensates for fixed header */
+  max-width: 100%;
+}
+
+.base-footer {
+  background-color: #f8f9fa;
+  text-align: center;
+  padding: 1rem 0;
+  margin-top: auto;
+}
+
