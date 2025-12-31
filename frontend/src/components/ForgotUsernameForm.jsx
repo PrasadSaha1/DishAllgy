@@ -13,7 +13,7 @@ function ForgotUsernameForm() {
             const res = await api.post('http://localhost:8000/api/forgot_username/', {
                 email: email,
             });
-            toast.error("An email has been sent to your address with your username(s).");
+            toast("An email has been sent to your address with your username(s).");
         } catch (err) {
             if (err.status === 404){
                 toast.error("No account found with this email address.");

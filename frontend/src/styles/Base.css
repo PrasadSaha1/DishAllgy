@@ -9,13 +9,20 @@
   z-index: 1000;
 }
 
+.base-container {
+  min-height: 100vh;          
+  display: flex;
+  flex-direction: column;
+  background: #f4f4f4;      
+}
+
+
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Keep font size consistent */
 .brand-title {
   font-size: 1.25rem;
   margin: 0;
@@ -38,7 +45,7 @@
 
 .base-main {
   flex: 1;
-  padding: 6rem 1rem 1.5rem; /* top padding compensates for fixed header */
+  padding: 6rem 1rem 1.5rem; 
   max-width: 100%;
 }
 

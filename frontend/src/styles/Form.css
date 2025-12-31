@@ -37,8 +37,8 @@
 
 .form-group {
   width: 100%;
-  max-width: 400px;  /* Match your input width */
-  margin: 0 auto 20px auto;  /* Center the group and space below */
+  max-width: 400px;  
+  margin: 0 auto 20px auto; 
   text-align: left;
 }
 

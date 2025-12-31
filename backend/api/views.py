@@ -13,7 +13,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.urls import reverse
 import constants
-from .scraping import check_dish, check_cuisine, check_ingredients, get_urls, check_ingredients_async
+from .scraping import check_dish, check_cuisine, check_ingredients, get_urls
 import requests
 from bs4 import BeautifulSoup
 from django.http import StreamingHttpResponse
@@ -25,7 +25,8 @@ import time
 import uuid
 from api.allergen_worker import check_url  # This module has no Django imports
 from concurrent.futures import ThreadPoolExecutor
-
+from spellchecker import SpellChecker
+from .models import SavedSearch, SavedRecipe
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -214,24 +215,9 @@ def contact_us(request):
     return Response({'detail': 'Message sent'})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # anyone can access
 def fetch_allergens_request(request):
     return Response({"allergens": constants.COMMON_ALLERGENS})
-
-def sse_view(request):
-    request_id = request.GET.get("request_id")
-
-    def event_stream():
-        while True:
-            data = cache.get(request_id)
-            if data and data.get("status") != "started":
-                yield f"data: {json.dumps(data)}\n\n"
-                break
-            time.sleep(1)
-
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-
-
 
 def check_url(args):
     url, allergens = args
@@ -241,176 +227,100 @@ def check_url(args):
     except Exception as e:
         return (url, "fail", None, None, str(e))
 
+def sse_event(event: str, data: str):
+    return f"event: {event}\ndata: {data}\n\n"
 
-"""
-no mutliprocessing at all
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
+def spell_check(text):
+    spell = SpellChecker()
+    words = text.split()
+    corrected_text = []
+
+    for word in words:
+        correct_word = spell.correction(word)
+        if not correct_word:
+            corrected_text.append(word)  # If no correction found, keep the original word
+        else:
+            corrected_text.append(spell.correction(word))
+
+    final_text = " ".join(corrected_text)
+    return final_text
+
 def search_for_allergens_in_dish(request):
-    dish = request.data.get("dish")
-    allergens = request.data.get("allergens")
+    # dish = request.data.get("dish")
+    # allergens = request.data.get("allergens")
+    dish = request.GET.get("dish")
+    allergens = request.GET.get("allergens")
+    try:
+        max_recipes = int(request.GET.get("maxRecipes"))
+    except (ValueError, TypeError):
+        max_recipes = 999999
 
-    time1 = time.perf_counter()
-    url = f"https://www.allrecipes.com/search?q={dish}"
+    dish = spell_check(dish)
 
-    result = requests.get(url)
+    search_url = f"https://www.allrecipes.com/search?q={dish}"
+    result = requests.get(search_url)
     doc = BeautifulSoup(result.text, "html.parser")
 
     hrefs = [a['href'] for a in doc.find_all('a', href=True)]
-    valid_recipes = []
+    try:
+        valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')][:max_recipes]
+    except Exception as e:
+        valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
 
-    for href in hrefs:
-        if href[0:34] == 'https://www.allrecipes.com/recipe/':
-            valid_recipes.append(href)
-
-    num_recipes = 0
-    num_recipes_with_allergen = 0
-    num_fails = 0
-
-    urls_with_allergen = []
-    urls_without_allergen = []
-
-    for url in valid_recipes:
-        recipe = check_ingredients(url, allergens)
-        if recipe[0] == "fail":
-            num_fails += 1
-        else:
-            num_recipes += 1
+    def event_stream():
+        if not valid_recipes:
+            yield sse_event("error", "No recipes found")
+            return
         
-        if recipe[0] == "allergen": 
-            num_recipes_with_allergen += 1
-            urls_with_allergen.append([url, recipe[1], recipe[2], recipe[3]])
-        elif recipe[0] == "no allergen":
-            urls_without_allergen.append([url, recipe[1], recipe[2], recipe[3]])
-    print(time.perf_counter() - time1)
+        num_recipes = 0
+        num_recipes_with_allergen = 0
+        num_fails = 0
 
-    return Response({"num_recipes": num_recipes, "num_recipes_with_allergen": num_recipes_with_allergen, "urls_without_allergen": urls_without_allergen})
-"""
+        urls_with_allergen = []
+        urls_without_allergen = []
+        
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            for i, result in enumerate(executor.map(check_url, [(url, allergens) for url in valid_recipes])):
+                # results.append(result)
+                
+                if result[1] == "fail":
+                    num_fails += 1
+                else:
+                    num_recipes += 1
 
+                if result[1] == "allergen":
+                    num_recipes_with_allergen += 1
+                    urls_with_allergen.append([result[0], result[2], result[3], result[4]])
+                elif result[1] == "no allergen":
+                    urls_without_allergen.append([result[0], result[2], result[3], result[4]])
 
-# threads 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def search_for_allergens_in_dish(request):
-    dish = request.data.get("dish")
-    allergens = request.data.get("allergens")
+                if i % 5 == 4 or i == len(valid_recipes) - 1 or True:
+                    data = {
+                        "num_total_recipes": len(valid_recipes),
+                        "num_recipes": num_recipes,
+                        "num_recipes_with_allergen": num_recipes_with_allergen,
+                        "urls_without_allergen": urls_without_allergen,
+                        "urls_with_allergen": urls_with_allergen,
+                        "num_fails": num_fails,
+                    }
+                    # SSE format: "data: <json>\n\n"
+                    yield f"data: {json.dumps(data)}\n\n"
+                
+                if i == len(valid_recipes) - 1:
+                    yield "event: done\ndata: {}\n\n"
 
-    time1 = time.perf_counter()
-    search_url = f"https://www.allrecipes.com/search?q={dish}"
-    result = requests.get(search_url)
-    doc = BeautifulSoup(result.text, "html.parser")
-
-    hrefs = [a['href'] for a in doc.find_all('a', href=True)]
-    valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
-
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        results = list(executor.map(check_url, [(url, allergens) for url in valid_recipes]))
-
-
-    num_recipes = 0
-    num_recipes_with_allergen = 0
-    num_fails = 0
-
-    urls_with_allergen = []
-    urls_without_allergen = []
-
-    for res in results:
-        url, status, name, ingredients, instructions = res
-
-        if status == "fail":
-            num_fails += 1
-        else:
-            num_recipes += 1
-
-        if status == "allergen":
-            num_recipes_with_allergen += 1
-            urls_with_allergen.append([url, name, ingredients, instructions])
-        elif status == "no allergen":
-            urls_without_allergen.append([url, name, ingredients, instructions])
-
-    print(time.perf_counter() - time1)
-    return Response({
-        "num_recipes": num_recipes,
-        "num_recipes_with_allergen": num_recipes_with_allergen,
-        "urls_without_allergen": urls_without_allergen,
-        "urls_with_allergen": urls_with_allergen,
-        "num_fails": num_fails,
-    })
-
-
-"""
-# asynico 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def search_for_allergens_in_dish(request):
-    dish = request.data.get("dish")
-    allergens = request.data.get("allergens")
-    time1 = time.perf_counter()
-
-    # Scrape search results with normal requests
-    search_url = f"https://www.allrecipes.com/search?q={dish}"
-    result = requests.get(search_url)
-    doc = BeautifulSoup(result.text, "html.parser")
-
-    valid_recipes = [
-        a['href'] for a in doc.find_all('a', href=True)
-        if a['href'].startswith('https://www.allrecipes.com/recipe/')
-    ]
-    valid_recipes = list(set(valid_recipes))
-
-    # Run async scraping
-    async def run_allergen_checks():
-        async with ClientSession() as session:
-            tasks = [
-                check_ingredients_async(session, url, allergens)
-                for url in valid_recipes
-            ]
-            return await asyncio.gather(*tasks)
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    results = loop.run_until_complete(run_allergen_checks())
-
-    # Process results
-    num_recipes = 0
-    num_recipes_with_allergen = 0
-    num_fails = 0
-    urls_with_allergen = []
-    urls_without_allergen = []
-
-    for i, recipe in enumerate(results):
-        url = valid_recipes[i]
-        status, name, ingredients, instructions = recipe
-
-        if status == "fail":
-            num_fails += 1
-        else:
-            num_recipes += 1
-
-        if status == "allergen":
-            num_recipes_with_allergen += 1
-            urls_with_allergen.append([url, name, ingredients, instructions])
-        elif status == "no allergen":
-            urls_without_allergen.append([url, name, ingredients, instructions])
-    print(time.perf_counter() - time1)
-
-    return Response({
-        "num_recipes": num_recipes,
-        "num_recipes_with_allergen": num_recipes_with_allergen,
-        "urls_without_allergen": urls_without_allergen,
-        "urls_with_allergen": urls_with_allergen,
-        "num_fails": num_fails,
-    })
-"""
-     
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
+    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+ 
 def search_for_allergens_in_cuisine(request):
-    cuisine = request.data.get("cuisine")
-    allergens = request.data.get("allergens")
-    # num_recipes, num_recipes_with_allergen, urls_without_allergen, urls_with_allergen = check_cuisine(cuisine, allergens)
+    cuisine = request.GET.get("cuisine")
+    allergens = request.GET.get("allergens")
+    try:
+        max_recipes = int(request.GET.get("maxRecipes"))
+    except (ValueError, TypeError):
+        max_recipes = 999999
 
-    time1 = time.perf_counter()
+    cuisine = spell_check(cuisine)
+
     cuisine_search_url = "https://www.allrecipes.com/cuisine-a-z-6740455"
     result = requests.get(cuisine_search_url)
     doc = BeautifulSoup(result.text, "html.parser")
@@ -419,58 +329,161 @@ def search_for_allergens_in_cuisine(request):
     cuisine_url = None
 
     for href in hrefs:
-        if re.search(rf'\b{re.escape(cuisine)}\b', href, re.IGNORECASE):
+        if re.search(rf'\b{re.escape(cuisine)}\b', "American", re.IGNORECASE):
+            continue
+        if re.search(rf'\b{re.escape(cuisine)}\b', href, re.IGNORECASE) :
             cuisine_url = href
+            dish_hrefs = get_urls(cuisine_url)
+            try:
+                valid_recipes = dish_hrefs[:max_recipes]
+            except Exception as e:
+                valid_recipes = dish_hrefs
             break
     else:
-        print("we got an error with the cuisine and are bond to get 15 thousand errors in the future")
+        search_url = f"https://www.allrecipes.com/search?q={cuisine}"
+        result = requests.get(search_url)
+        doc = BeautifulSoup(result.text, "html.parser")
 
-    dish_hrefs = get_urls(cuisine_url)
+        hrefs = [a['href'] for a in doc.find_all('a', href=True)]
+        try:
+            valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')][:max_recipes]
+        except Exception as e:
+            valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
 
-    num_recipes = 0
-    num_recipes_with_allergen = 0
-    num_fails = 0
+    def event_stream():
+        if not valid_recipes:
+            yield sse_event("error", "No recipes found")
+            return
+        
+        num_recipes = 0
+        num_recipes_with_allergen = 0
+        num_fails = 0
 
-    urls_with_allergen = []
-    urls_without_allergen = []
+        urls_with_allergen = []
+        urls_without_allergen = []
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        results = list(executor.map(check_url, [(url, allergens) for url in dish_hrefs]))
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            for i, result in enumerate(executor.map(check_url, [(url, allergens) for url in valid_recipes])):                
+                if result[1] == "fail":
+                    num_fails += 1
+                else:
+                    num_recipes += 1
 
+                if result[1] == "allergen":
+                    num_recipes_with_allergen += 1
+                    urls_with_allergen.append([result[0], result[2], result[3], result[4]])
+                elif result[1] == "no allergen":
+                    urls_without_allergen.append([result[0], result[2], result[3], result[4]])
 
-
-    for res in results:
-        url, status, name, ingredients, instructions = res
-
-        if status == "fail":
-            num_fails += 1
-        else:
-            num_recipes += 1
-
-        if status == "allergen":
-            num_recipes_with_allergen += 1
-            urls_with_allergen.append([url, name, ingredients, instructions])
-        elif status == "no allergen":
-            urls_without_allergen.append([url, name, ingredients, instructions])
-
-    """
-    for url in dish_hrefs:
-        recipe = check_ingredients(url, allergens)
-        if recipe[0] == "fail":
-            num_fails += 1
-        else:
-            num_recipes += 1
-
-        if recipe[0] == "allergen": 
-            num_recipes_with_allergen += 1
-            urls_with_allergen.append([url, recipe[1], recipe[2], recipe[3]])
-        elif recipe[0] == "no allergen":
-            urls_without_allergen.append([url, recipe[1], recipe[2], recipe[3]])
-    """
-
-    print(time.perf_counter() - time1)
-
-    return Response({"num_recipes": num_recipes, "num_recipes_with_allergen": num_recipes_with_allergen, "urls_without_allergen": urls_without_allergen, "urls_with_allergen": urls_with_allergen})
+                data = {
+                    "num_recipes": num_recipes,
+                    "num_total_recipes": len(valid_recipes),
+                    "num_recipes_with_allergen": num_recipes_with_allergen,
+                    "urls_without_allergen": urls_without_allergen,
+                    "urls_with_allergen": urls_with_allergen,
+                    "num_fails": num_fails,
+                }
+                # SSE format: "data: <json>\n\n"
+                yield f"data: {json.dumps(data)}\n\n"
+                
+                if i == len(valid_recipes) - 1:
+                    yield "event: done\ndata: {}\n\n"
 
 
+    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_search(request):
+    type = request.data.get("type")
+    element = request.data.get("element")
+    allergens = request.data.get("allergens")
+    num_recipes = request.data.get("num_recipes")
+    num_recipes_with_allergen = request.data.get("num_recipes_with_allergen")
+    recipe_urls = request.data.get("recipe_urls")
+
+    print(num_recipes, num_recipes_with_allergen)
+
+    try:
+        SavedSearch.objects.create(
+            user=request.user,
+            type=type,
+            element=element,
+            allergens=allergens,
+            num_recipes=num_recipes,
+            num_recipes_with_allergen=num_recipes_with_allergen,
+            recipe_urls=recipe_urls
+        )
+    except Exception as e:
+        pass
+
+    # Logic to save the search for the user
+    return Response({'detail': 'Search saved successfully'})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_saved_searches(request):
+    saved_searches = SavedSearch.objects.filter(user=request.user)
+    
+    data = []
+    for search in saved_searches:
+        data.append({
+            "id": search.id,
+            "type": search.type,
+            "element": search.element,
+            "allergens": search.allergens,
+            "num_recipes": search.num_recipes,
+            "num_recipes_with_allergen": search.num_recipes_with_allergen,
+            "recipe_urls": search.recipe_urls,
+            "created_at": search.created_at.isoformat(),
+        })
+    
+    return Response({"saved_searches": data})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_recipe(request):
+    recipe_name = request.data.get("recipe_name")
+    recipe_url = request.data.get("recipe_url")
+    recipe_image = request.data.get("recipe_image")
+    recipe_description = request.data.get("recipe_description")
+    
+    element_name = request.data.get("element_name")
+    element_type = request.data.get("element_type")
+    allergens = request.data.get("allergens")
+
+    SavedRecipe.objects.create(
+        user=request.user,
+        recipe_name=recipe_name,
+        recipe_url=recipe_url,
+        recipe_image=recipe_image,
+        recipe_description=recipe_description,
+        element_name=element_name,
+        element_type=element_type,
+        allergens=allergens
+    )
+
+    return Response({'detail': 'Recipe saved successfully'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_saved_recipes(request):
+    saved_recipes = SavedRecipe.objects.filter(user=request.user)
+    
+    data = []
+    for recipe in saved_recipes:
+        data.append({
+            "id": recipe.id,
+            "type": recipe.element_type,
+            "element_name": recipe.element_name,
+            "allergens": recipe.allergens,
+            "name": recipe.recipe_name,
+            "image": recipe.recipe_image,
+            "url": recipe.recipe_url,
+            "description": recipe.recipe_description,
+            "created_at": recipe.created_at.isoformat(),
+        })
+    
+    return Response({"saved_recipes": data})

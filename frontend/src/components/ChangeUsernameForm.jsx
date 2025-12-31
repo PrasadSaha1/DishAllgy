@@ -14,7 +14,7 @@ function ChangeUsernameForm() {
                 username: username,
                 password: password,
             });
-            navigate('/settings'); // Redirect to home page after successful change
+            navigate('/settings'); 
         } catch (err) {
             if (err.status === 401){
                 alert("Invalid password");

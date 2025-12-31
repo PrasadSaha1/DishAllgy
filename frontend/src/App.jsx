@@ -17,6 +17,7 @@ import RedirectEmailGiven from './components/RedirectEmailGiven';
 import ResetPassword from './pages/ResetPassword';
 import ContactUs from './pages/ContactUs';
 import { ToastContainer } from 'react-toastify';
+import SavedRecipes from './pages/SavedRecipes';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
@@ -63,6 +64,12 @@ function App() {
       <Route path="/change_password" element={
         <RedirectLoggedOut>
           <ChangePassword />
+        </RedirectLoggedOut>
+      } />
+
+      <Route path="/saved_recipes" element={
+        <RedirectLoggedOut>
+          <SavedRecipes />
         </RedirectLoggedOut>
       } />
 

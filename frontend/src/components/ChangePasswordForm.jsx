@@ -16,7 +16,7 @@ function ChangePasswordForm() {
                 new_password: newPassword,
                 confirm_password: confirmPassword,  
             });
-            navigate('/settings'); // Redirect to home page after successful change
+            navigate('/settings'); 
         } catch (err) {
             if (err.status === 401){
                 toast.error("Invalid current password");

@@ -92,13 +92,10 @@ def get_urls(url):
     result = requests.get(url)
     doc = BeautifulSoup(result.text, "html.parser")
 
-    # Step 2: Find the <script> tag with JSON-LD
     script_tag = doc.find("script", {"type": "application/ld+json"})
 
-    # Step 3: Load JSON from script tag
     json_data = json.loads(script_tag.string)
 
-    # Step 4: Loop through items and collect URLs
     urls = []
 
     # json_data is a list
@@ -138,7 +135,6 @@ async def check_ingredients_async(session, url, allergens):
             html = await response.text()
             doc = BeautifulSoup(html, "html.parser")
 
-            # Your parsing logic here
 
             keywords = []
             for allergen in COMMON_ALLERGENS:

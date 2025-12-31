@@ -6,10 +6,11 @@ export default function Base({ children }) {
     <div className="base-container">
       <header className="base-header">
         <div className="header-content">
-          <h1 className="brand-title">My App</h1>
+          <h1 className="brand-title">Dish Allergen Search Portal</h1>
           <nav className="nav-links">
             <a href="/">Home</a>
             <a href="/settings">Settings</a>
+            <a href="/saved_recipes">Saved Recipes</a>
           </nav>
         </div>
       </header>

@@ -14,7 +14,7 @@ function ChangeEmailForm() {
                 email: email,
                 password: password,
             });
-            navigate('/settings'); // Redirect to home page after successful change
+            navigate('/settings'); 
         } catch (err) {
             if (err.status === 401){
                 toast.error("Invalid email address");

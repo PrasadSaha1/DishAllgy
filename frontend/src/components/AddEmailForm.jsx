@@ -12,7 +12,7 @@ function AddEmailForm() {
             const res = await api.post('http://localhost:8000/api/add_email/', {
                 email: email
             });
-            navigate('/settings'); // Redirect to home page after successful change
+            navigate('/settings'); 
         } catch (err) {
             if (err.status === 401){
                 toast.error("Invalid email address");

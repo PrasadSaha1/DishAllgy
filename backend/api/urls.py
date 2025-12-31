@@ -15,6 +15,8 @@ urlpatterns = [
     path('fetch_allergens_request/', fetch_allergens_request, name='fetch_allergens_request'),
     path('search_for_allergens_in_dish/', search_for_allergens_in_dish, name='search_for_allergens_in_dish'),
     path('search_for_allergens_in_cuisine/', search_for_allergens_in_cuisine, name='search_for_allergens_in_cuisine'),
-    path('sse/', sse_view, name='sse_view'),
-    # path('sse_allergen_view/', sse_allergen_view, name='sse_allergen_view'),
+    path('save_search/', save_search, name='save_search'),
+    path('get_saved_searches/', get_saved_searches, name='get_saved_searches'),
+    path('save_recipe/', save_recipe, name='save_recipe'),
+    path('get_saved_recipes/', get_saved_recipes, name='get_saved_recipes'),
 ]

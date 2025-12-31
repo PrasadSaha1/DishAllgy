@@ -42,7 +42,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30000),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
@@ -60,17 +60,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
 ]
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",  # Adjust to your Redis config
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
