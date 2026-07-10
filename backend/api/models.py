@@ -11,6 +11,7 @@ class SavedSearch(models.Model):
     num_recipes = models.IntegerField(default=0)  
     num_recipes_with_allergen = models.IntegerField(default=0)  
     recipe_urls = models.JSONField(default=list)  
+    is_favorite = models.BooleanField(default=False)
 
 class SavedRecipe(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_recipes')
@@ -24,3 +25,4 @@ class SavedRecipe(models.Model):
     element_name = models.CharField(max_length=200)  
     element_type = models.CharField(max_length=50)  
     allergens = models.JSONField(default=list)
+    is_favorite = models.BooleanField(default=False)

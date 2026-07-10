@@ -35,6 +35,7 @@ export default function Settings() {
                 }
             } 
         });
+        document.title = "Settings";
     }, []);
 
 

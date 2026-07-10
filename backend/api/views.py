@@ -222,6 +222,7 @@ def fetch_allergens_request(request):
 def check_url(args):
     url, allergens = args
     try:
+        print(url, allergens)
         recipe = check_ingredients(url, allergens)
         return (url, *recipe)
     except Exception as e:
@@ -246,8 +247,6 @@ def spell_check(text):
     return final_text
 
 def search_for_allergens_in_dish(request):
-    # dish = request.data.get("dish")
-    # allergens = request.data.get("allergens")
     dish = request.GET.get("dish")
     allergens = request.GET.get("allergens")
     try:
@@ -266,6 +265,12 @@ def search_for_allergens_in_dish(request):
         valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')][:max_recipes]
     except Exception as e:
         valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
+   
+    if not valid_recipes:
+        def event_stream():
+            yield "event: error\ndata: No recipes found\n\n"
+
+        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
     def event_stream():
         if not valid_recipes:
@@ -278,7 +283,7 @@ def search_for_allergens_in_dish(request):
 
         urls_with_allergen = []
         urls_without_allergen = []
-        
+        print("Mbappe")
         with ThreadPoolExecutor(max_workers=8) as executor:
             for i, result in enumerate(executor.map(check_url, [(url, allergens) for url in valid_recipes])):
                 # results.append(result)
@@ -329,8 +334,6 @@ def search_for_allergens_in_cuisine(request):
     cuisine_url = None
 
     for href in hrefs:
-        if re.search(rf'\b{re.escape(cuisine)}\b', "American", re.IGNORECASE):
-            continue
         if re.search(rf'\b{re.escape(cuisine)}\b', href, re.IGNORECASE) :
             cuisine_url = href
             dish_hrefs = get_urls(cuisine_url)
@@ -350,11 +353,13 @@ def search_for_allergens_in_cuisine(request):
         except Exception as e:
             valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
 
+    if not valid_recipes:
+        def event_stream():
+            yield "event: error\ndata: No recipes found\n\n"
+
+        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+
     def event_stream():
-        if not valid_recipes:
-            yield sse_event("error", "No recipes found")
-            return
-        
         num_recipes = 0
         num_recipes_with_allergen = 0
         num_fails = 0
@@ -402,8 +407,6 @@ def save_search(request):
     num_recipes_with_allergen = request.data.get("num_recipes_with_allergen")
     recipe_urls = request.data.get("recipe_urls")
 
-    print(num_recipes, num_recipes_with_allergen)
-
     try:
         SavedSearch.objects.create(
             user=request.user,
@@ -436,6 +439,7 @@ def get_saved_searches(request):
             "num_recipes_with_allergen": search.num_recipes_with_allergen,
             "recipe_urls": search.recipe_urls,
             "created_at": search.created_at.isoformat(),
+            "is_favorite": search.is_favorite,
         })
     
     return Response({"saved_searches": data})
@@ -484,6 +488,36 @@ def get_saved_recipes(request):
             "url": recipe.recipe_url,
             "description": recipe.recipe_description,
             "created_at": recipe.created_at.isoformat(),
+            "is_favorite": recipe.is_favorite,
         })
     
     return Response({"saved_recipes": data})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def delete_saved_recipe_or_search(request):
+    object_id = request.data.get("objectID")
+    object_type = request.data.get("objectType")
+
+    if object_type == "recipe":
+        SavedRecipe.objects.filter(id=object_id).delete()
+    elif object_type == "search":
+        SavedSearch.objects.filter(id=object_id).delete()
+
+    return Response({"success": True})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def favorite_recipe_or_search(request):
+    object_id = request.data.get("objectID")
+    object_type = request.data.get("objectType")
+
+    if object_type == "recipe":
+        obj = SavedRecipe.objects.get(id=object_id, user=request.user)
+    elif object_type == "search":
+        obj = SavedSearch.objects.get(id=object_id, user=request.user)
+
+    obj.is_favorite = not obj.is_favorite
+    obj.save()
+
+    return Response({"success": True})

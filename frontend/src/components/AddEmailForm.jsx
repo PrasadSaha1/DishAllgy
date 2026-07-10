@@ -26,6 +26,9 @@ function AddEmailForm() {
             title="Add Email"
             showEmail={true}
             onSubmit={handleAddEmailSubmit}
+            bottomText={
+                <a className="btn btn-primary" href="/settings">Back</a>
+            }
         />
     );
 }

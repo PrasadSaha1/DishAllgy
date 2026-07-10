@@ -9,10 +9,16 @@ function RegisterForm() {
     const navigate = useNavigate();
 
     const handleRegister = async ({ username, password, confirmPassword, email }) => {
-        if (username.length < 8 || password.length < 8) {
-            toast.error("Invalid password");
+       if (username.length < 6) {
+            toast.error("Username must be at least 6 characters");
             return;
         }
+
+        if (password.length < 8) {
+            toast.error("Password must be at least 8 characters");
+            return;
+        }
+
         if (password !== confirmPassword) {
             toast.error("Passwords do not match");
             return;

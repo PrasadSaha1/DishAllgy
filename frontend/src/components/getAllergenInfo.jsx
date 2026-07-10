@@ -1,6 +1,7 @@
 import { ACCESS_TOKEN } from "../constants";
 
 export const getAllergenInfo = async () => {
+    
     const token = localStorage.getItem(ACCESS_TOKEN);
 
     const headers = { "Content-Type": "application/json" };
@@ -12,10 +13,5 @@ export const getAllergenInfo = async () => {
     });
 
     const data = await res.json();
-    console.log("Allergen info:", data);
     return data;
 };
-
-
-//    var allergens = ["Nuts", "Dairy", "Gluten", "Soy", "Eggs", "Fish", "Shellfish", "Sesame", "Mustard"]
-  //  return allergens;

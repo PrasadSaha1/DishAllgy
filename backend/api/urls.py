@@ -19,4 +19,6 @@ urlpatterns = [
     path('get_saved_searches/', get_saved_searches, name='get_saved_searches'),
     path('save_recipe/', save_recipe, name='save_recipe'),
     path('get_saved_recipes/', get_saved_recipes, name='get_saved_recipes'),
+    path('delete_saved_recipe_or_search/', delete_saved_recipe_or_search, name='delete_saved_recipe_or_search'),
+    path('favorite_recipe_or_search/', favorite_recipe_or_search, name='favorite_recipe_or_search'),
 ]

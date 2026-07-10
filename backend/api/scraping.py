@@ -18,14 +18,21 @@ def check_ingredients(url, allergens):
     title = doc.title.string
     description = doc.find("meta", attrs={"name": "description"})["content"]
 
-    img = doc.find(class_='img-placeholder')
-    img_tag = img.find_next('img')
+   # img = doc.find(class_='img-placeholder')
+     #img_tag = img.find_next('img')
+    all_placeholders = doc.find_all(class_='img-placeholder')
+
+    if len(all_placeholders) > 1:
+        img = all_placeholders[2]
+        img_tag = img.find_next('img')
 
     try:
         img_href = img_tag["data-src"]
+        # print(f"Real: {img_href}")
     except KeyError:
         try:
             img_href = img_tag["src"]
+            # print(f"Fake: {img_href}")
         except KeyError:  
             img_href = ""
 
@@ -54,7 +61,6 @@ def check_recipes(urls, allergens):
 
     urls_with_allergen = []
     urls_without_allergen = []
-
     for url in urls:
         recipe = check_ingredients(url, allergens)
         if recipe[0] == "fail":
@@ -127,55 +133,3 @@ def check_cuisine(cuisine, allergens):
 
     num_recipes, num_recipes_with_allergen, urls_without_allergen, urls_with_allergen = check_recipes(dish_hrefs, allergens)
     return num_recipes, num_recipes_with_allergen, urls_without_allergen, urls_with_allergen
-
-"""
-async def check_ingredients_async(session, url, allergens):
-    try:
-        async with session.get(url, timeout=10) as response:
-            html = await response.text()
-            doc = BeautifulSoup(html, "html.parser")
-
-
-            keywords = []
-            for allergen in COMMON_ALLERGENS:
-                if allergen in allergens:
-                    for word in COMMON_ALLERGENS[allergen]:
-                        keywords.append(word)
-
-            doc = BeautifulSoup(html.text, "html.parser")
-
-            title = doc.title.string
-            description = doc.find("meta", attrs={"name": "description"})["content"]
-
-            img = doc.find(class_='img-placeholder')
-            img_tag = img.find_next('img')
-
-            try:
-                img_href = img_tag["data-src"]
-            except KeyError:
-                try:
-                    img_href = img_tag["src"]
-                except KeyError:  
-                    img_href = ""
-
-            script_tag = doc.find("script", {"type": "application/ld+json"})
-
-            json_data = json.loads(script_tag.string)
-            if isinstance(json_data, list):
-                recipe_data = next((item for item in json_data if "Recipe" in item.get("@type", [])), None)
-            else:
-                recipe_data = json_data
-
-            if recipe_data:
-                ingredients = recipe_data.get("recipeIngredient", [])
-                ingredients_text = " ".join(ingredients).lower()
-                for keyword in keywords:
-                    if keyword in ingredients_text:
-                        return ["allergen", img_href, title, description]
-            else:
-                return ["fail", img_href, title, description]
-            return ["no allergen", img_href, title, description]
-
-    except Exception as e:
-        return ("fail", None, None, str(e))
-"""

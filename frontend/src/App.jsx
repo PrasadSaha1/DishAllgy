@@ -99,12 +99,12 @@ function App() {
     </Routes>
     <ToastContainer
         position="top-center"          // "top-left", "bottom-right", etc.
-        autoClose={6000}             // Auto close after 3 seconds
+        autoClose={3000}             // Auto close after 3 seconds
         hideProgressBar={false}      // Show/hide the progress bar
         newestOnTop={false}          // Show latest toast on top
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+        // pauseOnFocusLoss
         theme="light"                // "light" | "dark" | "colored"
       />
     </BrowserRouter>

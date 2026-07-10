@@ -9,6 +9,60 @@ import api from '../api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { all } from 'axios';
+import { title, formatAllergens } from "../components/HelperFunctions";
+import  CuisineAutofill  from "../components/cuisineAutofill";
+
+const cuisines = [
+  "Amish and Mennonite",
+  "Argentinian",
+  "Australian and New Zealander",
+  "Austrian",
+  "Bangladeshi",
+  "Belgian",
+  "Brazilian",
+  "Cajun and Creole",
+  "Canadian",
+  "Chilean",
+  "Chinese",
+  "Colombian",
+  "Cuban",
+  "Danish",
+  "Dutch",
+  "Filipino",
+  "Finnish",
+  "French",
+  "German",
+  "Greek",
+  "Indian",
+  "Indonesian",
+  "Israeli",
+  "Italian",
+  "Jamaican",
+  "Japanese",
+  "Jewish",
+  "Korean",
+  "Lebanese",
+  "Malaysian",
+  "Norwegian",
+  "Pakistani",
+  "Persian",
+  "Peruvian",
+  "Polish",
+  "Portuguese",
+  "Puerto Rican",
+  "Russian",
+  "Scandinavian",
+  "Soul Food",
+  "South African",
+  "Southern Recipes",
+  "Spanish",
+  "Swedish",
+  "Swiss",
+  "Tex-Mex",
+  "Thai",
+  "Turkish",
+  "Vietnamese"
+];
 
 function AccountButtons({isLoggedIn, name}){
     if (isLoggedIn) {
@@ -34,7 +88,7 @@ function AllergenList({ allergens, selectedAllergens, onAllergenChange }) {
   return (
     <div>
       {allergens.map((allergen) => (
-        <label key={allergen} style={{ marginRight: "10px" }}>
+        <label key={allergen} className="allergen-label" style={{ marginRight: "10px" }}>
           <input
             type="checkbox"
             checked={selectedAllergens.includes(allergen)}
@@ -69,7 +123,7 @@ function RecipesWithAllergensDisplay({ recipeNames = [] }) {
   );
 }
 
-function StopSearchDisplay({ currentState, stopSearch, isLoggedIn, saveSearch, type }) {
+function StopSearchDisplay({ currentState, stopSearch, isLoggedIn, saveSearch, setSearchSaved, type, searchSaved }) {
   if (currentState) {
     return (
       <div>
@@ -84,15 +138,31 @@ function StopSearchDisplay({ currentState, stopSearch, isLoggedIn, saveSearch, t
     );
   } else {
       if (isLoggedIn) {
-        return (
-        <div>
-          <button className="btn btn-success" type="button" onClick={() => saveSearch(type)} >Save Search</button>
-        </div>
-        )
+        console.log(searchSaved)
+        if (searchSaved) {
+          return (
+          <div>
+            <h3>Search Saved!</h3>
+          </div>
+          )
+        } else {
+          return (
+          <div>
+            <button className="btn btn-success" type="button" onClick={() => saveSearch(type, setSearchSaved)} >Save Search</button>
+          </div>
+          )
+        }
       } else {
       return (
-      <div>
-        <h3>Create an Account to Save Results!</h3>
+      <div style={{marginTop: "20px"}}>
+        <h3>Create an account to save results!</h3>
+        <a href="/register" className="btn btn-primary btn-lg type-button">
+          Create Account
+        </a>
+
+        <a href="/login" className="btn btn-primary btn-lg type-button">
+          Login
+        </a>
       </div>
       )
     }
@@ -100,26 +170,6 @@ function StopSearchDisplay({ currentState, stopSearch, isLoggedIn, saveSearch, t
 }
 
 
-/*
-function RecipeDisplay({recipeUrls, isLoggedIn, saveRecipe, type}) {
-  return (
-    <div className='recipe-grid'>
-      {recipeUrls.map((recipe, index) => (
-          <div key={index} className='recipe-display'>
-            <img src={recipe[1]} alt="Loading..." width="300" />
-            <label>{recipe[2]} (
-              <a href={recipe[0]} target="_blank" rel="noopener noreferrer">Link</a>)
-            </label>          
-            <label>{recipe[3]}</label>
-            {isLoggedIn && (
-              <button className="btn btn-success" style={{marginTop: "10px"}} type="button" onClick={() => saveRecipe(recipe[0], recipe[1], recipe[2], recipe[3], type)} >Save Recipe</button>
-            )}
-        </div>
-      ))}
-    </div>
-  );
-}*/
-  
 
 
 export default function Home() {
@@ -150,7 +200,22 @@ export default function Home() {
 
     const recipeSourceRef = useRef(null);
     const cuisineSearchRef = useRef(null);
+    const [search, setSearch] = useState("");
+    const [searchSaved, setSearchSaved] = useState(false);
+    const [savedRecipesURLs, setSavedRecipesURLs] = useState([]);
 
+    const getSavedRecipes = async () => {
+      var recipeURLs = [];
+      const res = await api.get(
+        "http://localhost:8000/api/get_saved_recipes/"
+      );
+      res.data.saved_recipes.forEach(recipe => {
+          recipeURLs.push(recipe.url)
+        });
+      setSavedRecipesURLs(recipeURLs);
+      console.log(recipeURLs);
+
+    };
 
     const handleAllergenChange = (allergen) => {
       setSelectedAllergens((prev) =>
@@ -171,11 +236,18 @@ export default function Home() {
                 setUsername(user.username);
             } 
         });
+        getSavedRecipes();
+        document.title = "DishAllgy";
     }, []);
  
 
   const handleRecipeSubmit = async (e) => {
     e.preventDefault();
+
+    if (inRecipeSearch) {
+      toast.error("A search is alreay in progress")
+      return
+    }
 
     const formData = new FormData(e.target);
     var dishToSend = formData.get('dish');
@@ -221,6 +293,17 @@ export default function Home() {
         source.close();
         setInRecipeSearch(false);
       });
+    source.addEventListener("error", (event) => {
+      try {
+        const data = event.data ? JSON.parse(event.data) : null;
+        setError("No results found. Input may be invalid");
+      } catch {
+        setError("No results found. Input may be invalid");
+      }
+
+      source.close();
+      setInRecipeSearch(false);
+    });
                   
 
     } catch (err) {
@@ -236,7 +319,7 @@ export default function Home() {
     }
   };
 
-    const saveSearch = async (type) => {
+    const saveSearch = async (type, setObjectSaved) => {
       let elementChecked, allergens, numRecipesSend, numRecipesWithAllergenSend, recipeUrlsSend;
 
       if (type === "dish") {
@@ -252,6 +335,7 @@ export default function Home() {
         numRecipesWithAllergenSend = numRecipesWithAllergen2;
         recipeUrlsSend = recipeUrls2;
       }
+      setObjectSaved(true);
 
       try {
         const res = await api.post("http://localhost:8000/api/save_search/", {
@@ -262,6 +346,7 @@ export default function Home() {
           num_recipes_with_allergen: numRecipesWithAllergenSend,
           recipe_urls: recipeUrlsSend,
         });
+        
 
         toast("Search saved successfully!");
       } catch (err) {
@@ -270,7 +355,7 @@ export default function Home() {
       }
     };
 
-    const saveRecipe = async (link, image, name, description, type) => {
+    const saveRecipe = async (link, image, name, description, type, setRecipeSaved) => {
       if (type === "dish") {
         var allergensToSend = allergensChecked;
         var search = dishChecked;
@@ -289,6 +374,11 @@ export default function Home() {
         element_name: search,
         });
         toast("Recipe saved successfully!");
+        setRecipeSaved(true);  // stress test this, maybe put it earlier
+        setSavedRecipesURLs(prev => [
+          ...prev,
+          link
+        ]);
     }
 
 
@@ -303,11 +393,21 @@ export default function Home() {
   const handleCuisineSubmit = async (e) => {
     e.preventDefault();
 
+    if (inCuisineSearch) {
+      toast.error("A search is alreay in progress")
+      return
+    }
+
+
     var formData = new FormData(e.target);
     var cuisineToSend = formData.get('cuisine');
     var allergensToSend = selectedAllergens;
     var maxRecipesToSend = formData.get('max_recipes_2');
 
+    if (!cuisines.some(c => c.toLowerCase() === cuisineToSend.toLowerCase())) {
+      toast.error("Invalid cuisine");
+          return;
+        }
 
     setNumTotalRecipes2("");
     setNumRecipes2("");
@@ -337,7 +437,7 @@ export default function Home() {
         setNumRecipes2(data.num_recipes);
         setNumRecipesWithAllergen2(data.num_recipes_with_allergen)
         setRecipeUrls2(data.urls_without_allergen)
-        setInCuisineSearch(true );
+        setInCuisineSearch(true);
 
         var names = [];
         data.urls_with_allergen.forEach(recipe => {
@@ -355,28 +455,18 @@ export default function Home() {
         setInCuisineSearch(false);
         source.close();
       });
-                 
+    source.addEventListener("error", (event) => {
+      try {
+        const data = event.data ? JSON.parse(event.data) : null;
+        setError("No results found. Input may be invalid");
+      } catch {
+        setError("No results found. Input may be invalid");
+      }
 
-    
-      /*
-      var allergenString = "";
-      allergens.forEach(allergen => {
-        allergenString += allergen.charAt(0).toUpperCase() + allergen.slice(1) + ", ";
-      });
-      setAllergensChecked2(allergenString);
-      
-      
-      
-      setNumRecipes2(res.data.num_recipes);
-      setNumRecipesWithAllergen2(res.data.num_recipes_with_allergen)
-      setRecipeUrls2(res.data.urls_without_allergen)
-
-      var names = [];
-      res.data.urls_with_allergen.forEach(recipe => {
-        names.push(recipe[2])
-      });
-      setRecipesWithAllergen2(names)
-      */
+      source.close();
+      setInCuisineSearch(false);
+    });
+                
 
     } catch (err) {
       console.error(err);
@@ -390,168 +480,169 @@ export default function Home() {
   return (
     <Base>
       <div className="text-center">
-        <h1>Dish Allergen Search Portal</h1>
-        <h4>This portal scrapes websites to find recipes of a dish or a certain cuisine that avoid your allergens</h4>
+        <h1>DishAllgy</h1>
+        <h4>Find recipes for a certain dish or cuisine that avoid your allergens</h4>
 
-        {/*}
-        <AccountButtons isLoggedIn={isAuthenticated()} name={username} />
-        */}
+        <div className="search-container">
+          <div className="type-button-container">
+            <button className="type-button btn btn-primary" onClick={() => toggleForm('dish')}>Recipe</button>
+            <button className="type-button btn btn-primary" onClick={() => toggleForm('cuisine')}>Cuisine</button>
+          </div>
 
-        <button className="btn btn-primary" onClick={() => toggleForm('dish')}>Search Recipe</button>
-        <button className="btn btn-primary" onClick={() => toggleForm('cuisine')}>Search Cuisine</button>
+          {activeForm === "dish" && (
+            <form id="recipeForm" onSubmit={handleRecipeSubmit}>
+              <h2>Search for recipes with allergens</h2>
+              <h6>Specify your allergens and type in the dish</h6>
 
-        {activeForm === "dish" && (
-          <form id="recipeForm" className="recipe-search" onSubmit={handleRecipeSubmit}>
-            <h2>Search for recipes with allergens</h2>
-            <h6>Specify your allergens and type in the dish</h6>
-
-          <AllergenList
-            allergens={allergens}
-            selectedAllergens={selectedAllergens}
-            onAllergenChange={handleAllergenChange}
-          />
-            <input
-                className="mt-3"
-                name="dish"
-                placeholder="Type in a dish"
-                style={{ width: "50%" }}
-                required
+            <AllergenList
+              allergens={allergens}
+              selectedAllergens={selectedAllergens}
+              onAllergenChange={handleAllergenChange}
             />
-
-            <button className="form-submit btn btn-success" type="submit">
-                Submit
-            </button>
-
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <p>Max Number of Recipes: </p>
+            
               <input
-                  type="number"
-                  name="max_recipes"
-                  min="1"
-                  placeholder="Ex. 15"
-                  style={{ width: "10%", marginLeft: "15px" }}
+                  className="form-control mt-3"
+                  name="dish"
+                  placeholder="Type in a dish"
+                  style={{ width: "50%", margin: "auto"}}
+                  required
               />
-            </div>
+
+              <button className="form-submit btn btn-success mt-2" type="submit">
+                  Submit
+              </button>
+
+              {/*
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <p>Max Number of Recipes: </p>
+                <input
+                    type="number"
+                    name="max_recipes"
+                    min="1"
+                    placeholder="Ex. 15"
+                    style={{ width: "10%", marginLeft: "15px" }}
+                />
+              </div>
+              */}
 
 
-            {recipeSearchResult && (
-            <div className="mt-4">
-                <h3>Search Results:</h3>
-                <h5>Dish checked: {dishChecked}</h5>
-                <h5>Allergens: {allergensChecked}</h5>
+              {recipeSearchResult && (
+              <div className="mt-4">
+                  <h3>Search Results:</h3>
+                  <h5>Dish checked: {dishChecked}</h5>
+                  <h5>Allergens: {formatAllergens(allergensChecked)}</h5>
 
-              {(numRecipes) ? (
-                <div>
-                  <h6>Total Number of Recipes Found: {numTotalRecipes}</h6>
-                  <h6>Number of Recipes Successfully Checked: {numRecipes}</h6>
-                  <h6>
-                    Number of Recipes with Allergen: {numRecipesWithAllergen} (
-                    {Math.round((numRecipesWithAllergen / numRecipes) * 100)}%)
-                  </h6>
-                      <StopSearchDisplay currentState={inRecipeSearch} stopSearch={stopRecipeSearch} isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"dish"}/>
-
-                  
-
-                  <h4 style={{ marginTop: "50px" }}>
-                    Here are some recipes that don't contain your allergens
-                  </h4>
-                  <RecipeDisplay recipeUrls={recipeUrls} isLoggedIn={isAuthenticated()} saveRecipe={saveRecipe} type={"dish"} />
-                </div>
-              ) : error ? (
-                <div>
-                  <h2 style={{marginTop: "50px"}}>{error}</h2>
-                </div>
-              ) : (
-                <div>
-                  <h2>Scraping Recipes...</h2>
-                </div>
-              )}
-
-
-            </div>
-            )}
-
-          </form>
-        )}
-
-        {activeForm === "cuisine" && (
-          <form id="cuisineForm" onSubmit={handleCuisineSubmit}>
-            <h2>Search for cuisines with allergens</h2>
-            <h6>Specify your allergens and type in the cuisine...</h6>
-
-          <AllergenList
-            allergens={allergens}
-            selectedAllergens={selectedAllergens}
-            onAllergenChange={handleAllergenChange}
-          />
-            <input
-                className="mt-3"
-                name="cuisine"
-                placeholder="Type in a cuisine"
-                style={{ width: "50%" }}
-                required
-            />
-
-            <button className="form-submit btn btn-success" type="submit">
-                Submit
-            </button>
-
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <p>Max Number of Recipes: </p>
-              <input
-                  type="number"
-                  name="max_recipes_2"
-                  min="1"
-                  placeholder="Ex. 15"
-                  style={{ width: "10%", marginLeft: "15px" }}
-              />
-            </div>
-
-
-            {cuisineSearchResult && (
-            <div className="mt-4">
-                <h3>Search Results:</h3>
-                <h5>Cuisine checked: {cuisineChecked}</h5>
-                <h5>Allergens: {allergensChecked2}</h5>
-
-                {numRecipes2 ? (
+                {(numRecipes) ? (
                   <div>
-                    <h6>Total Number of Recipes Found: {numTotalRecipes2}</h6>
-                    <h6>Number of Recipes Successfully Checked: {numRecipes2}</h6>
-                    <h6>Number of Recipes with allergen: {numRecipesWithAllergen2} ({Math.round(numRecipesWithAllergen2 / numRecipes2 * 100)}%)</h6>
-                
-                    <StopSearchDisplay currentState={inCuisineSearch} stopSearch={stopCuisineSearch} isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"cuisine"}/>
+                    <h6>Total Number of Recipes Found: {numTotalRecipes}</h6>
+                    <h6>Number of Recipes Successfully Checked: {numRecipes}</h6>
+                    <h6>
+                      Number of Recipes with Allergen: {numRecipesWithAllergen} (
+                      {Math.round((numRecipesWithAllergen / numRecipes) * 100)}%)
+                    </h6>
+                        <StopSearchDisplay currentState={inRecipeSearch} stopSearch={stopRecipeSearch} isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"dish"} searchSaved={searchSaved} setSearchSaved={setSearchSaved}/>
 
+                    
 
-                    {/* {numRecipesWithAllergen2 !== 0 && ( */}
-                      <div>
-                        <h4 style={{"marginTop": "50px"}}>You should avoid the following recipes from this cuisine as they may have your allergens</h4>
-                        <RecipesWithAllergensDisplay recipeNames={recipesWithAllergen2} />
-                      </div>
-                    {/* )} */}
-
-                    <h4 style={{"marginTop": "50px"}}>Here are some recipes in the cuisine that don't contain your allergens</h4>
-                    <RecipeDisplay recipeUrls={recipeUrls2} isLoggedIn={isAuthenticated()} saveRecipe={saveRecipe} type={"cuisine"}/>
+                    <h4 style={{ marginTop: "50px" }}>
+                      Here are some recipes that don't contain your allergens
+                    </h4>
+                    <RecipeDisplay recipeUrls={recipeUrls} isLoggedIn={isAuthenticated()} saveRecipe={saveRecipe} type={"dish"} savedRecipesURLs={savedRecipesURLs} />
                   </div>
                 ) : error ? (
                   <div>
-                  <h2 style={{marginTop: "50px"}}>{error}</h2>
-                    </div>
+                    <h2 style={{marginTop: "50px"}}>{error}</h2>
+                  </div>
                 ) : (
-                <div>
-                  <h2>Scraping Recipes...</h2>
-                </div>
+                  <div>
+                    <h2>Scraping Recipes...</h2>
+                  </div>
+                )}
+
+
+              </div>
               )}
-            </div>
-            )}
-        </form>
 
-          
-        )}
+            </form>
+          )}
+
+          {activeForm === "cuisine" && (
+            <form id="cuisineForm" onSubmit={handleCuisineSubmit}>
+              <h2>Search for cuisines with allergens</h2>
+              <h6>Specify your allergens and type in the cuisine</h6>
+
+            <AllergenList
+              allergens={allergens}
+              selectedAllergens={selectedAllergens}
+              onAllergenChange={handleAllergenChange}
+            />
+
+            <CuisineAutofill
+                className="form-control mt-3"
+                name="cuisine"
+                suggestions={cuisines}
+                value={search}
+                setValue={setSearch}
+                placeholder="Type in a cuisine"
+                style={{ width: "50%", margin: "auto"}}
+                required
+            />
+
+              {/* 
+              <input
+                  className="mt-3"
+                  name="cuisine"
+                  placeholder="Type in a cuisine"
+                  style={{ width: "50%" }}
+                  required
+              />
+              */}
+
+              <button className="form-submit btn btn-success mt-2" type="submit">
+                  Submit
+              </button>
+
+              {cuisineSearchResult && (
+              <div className="mt-4">
+                  <h3>Search Results:</h3>
+                  <h5>Cuisine checked: {cuisineChecked}</h5>
+                  <h5>Allergens: {formatAllergens(allergensChecked2)}</h5>
+
+                  {numRecipes2 ? (
+                    <div>
+                      <h6>Total Number of Recipes Found: {numTotalRecipes2}</h6>
+                      <h6>Number of Recipes Successfully Checked: {numRecipes2}</h6>
+                      <h6>Number of Recipes with allergen: {numRecipesWithAllergen2} ({Math.round(numRecipesWithAllergen2 / numRecipes2 * 100)}%)</h6>
+                  
+                      <StopSearchDisplay currentState={inCuisineSearch} stopSearch={stopCuisineSearch} isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"cuisine"} searchSaved={searchSaved} setSearchSaved={setSearchSaved}/>
 
 
+                      {/* {numRecipesWithAllergen2 !== 0 && ( */}
+                        <div>
+                          <h4 style={{"marginTop": "50px"}}>You should avoid the following recipes from this cuisine as they may have your allergens</h4>
+                          <RecipesWithAllergensDisplay recipeNames={recipesWithAllergen2} />
+                        </div>
+                      {/* )} */}
 
-        <h4 style={{"marginTop": "1000px"}}></h4>
+                      <h4 style={{"marginTop": "50px"}}>Here are some recipes in the cuisine that don't contain your allergens</h4>
+                      <RecipeDisplay recipeUrls={recipeUrls2} isLoggedIn={isAuthenticated()} saveRecipe={saveRecipe} type={"cuisine"} savedRecipesURLs={savedRecipesURLs} />
+                    </div>
+                  ) : error ? (
+                    <div>
+                    <h2 style={{marginTop: "50px"}}>{error}</h2>
+                      </div>
+                  ) : (
+                  <div>
+                    <h2>Scraping Recipes...</h2>
+                  </div>
+                )}
+              </div>
+              )}
+          </form>
+
+            
+          )}
+        </div>
 
 
 

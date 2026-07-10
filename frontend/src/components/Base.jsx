@@ -1,16 +1,29 @@
 import React from 'react';
-import '../styles/Base.css'; // make sure this path is correct
+import '../styles/Base.css';
+import { isAuthenticated } from '../components/checkAuth';
 
 export default function Base({ children }) {
+  const loggedIn = isAuthenticated();
+
   return (
     <div className="base-container">
       <header className="base-header">
         <div className="header-content">
-          <h1 className="brand-title">Dish Allergen Search Portal</h1>
+          <h1 className="brand-title">DishAllgy</h1>
           <nav className="nav-links">
             <a href="/">Home</a>
-            <a href="/settings">Settings</a>
-            <a href="/saved_recipes">Saved Recipes</a>
+
+            {loggedIn ? (
+              <>
+                <a href="/settings">Settings</a>
+                <a href="/saved_recipes">Saved Recipes</a>
+              </>
+            ) : (
+              <>
+                <a href="/register">Create an Account</a>
+                <a href="/login">Log in</a>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -20,7 +33,7 @@ export default function Base({ children }) {
       </main>
 
       <footer className="base-footer">
-        <p className="mb-0">&copy; 2025 Website Inc.</p>
+        <p className="mb-0">&copy; 2026 DishAllgy</p>
       </footer>
     </div>
   );

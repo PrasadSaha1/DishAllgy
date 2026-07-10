@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import "../styles/form.css";
 import Base from '../components/Base';
 import LoadingIndicator from './LoadingIndicator';
@@ -43,6 +43,10 @@ function GeneralForm({
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        document.title = title;
+    }, []);
 
     return (
         <Base>
