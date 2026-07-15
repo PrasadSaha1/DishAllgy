@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Base from "../components/Base";
 import api from "../api";
-import "../styles/home.css";
+import "../styles/Home.css";
 import { title, formatAllergens } from "../components/HelperFunctions";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

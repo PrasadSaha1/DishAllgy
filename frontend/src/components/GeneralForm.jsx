@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import "../styles/form.css";
+import "../styles/Form.css";
 import Base from '../components/Base';
 import LoadingIndicator from './LoadingIndicator';
 

@@ -3,7 +3,7 @@ import Base from '../components/Base';
 import api from '../api';
 import { getUser } from '../components/getUser';
 import { useState, useEffect } from 'react';
-import "../styles/settings.css";
+import "../styles/Settings.css";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

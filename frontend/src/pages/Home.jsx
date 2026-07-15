@@ -4,7 +4,7 @@ import { getUser } from '../components/getUser';
 import { getAllergenInfo } from "../components/getAllergenInfo";
 import  RecipeDisplay  from '../components/RecipeDisplay';
 import { useState, useEffect, useRef } from 'react';
-import "../styles/home.css";
+import "../styles/Home.css";
 import api from '../api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
