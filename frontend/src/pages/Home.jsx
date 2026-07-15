@@ -10,7 +10,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { all } from 'axios';
 import { title, formatAllergens } from "../components/HelperFunctions";
-import  CuisineAutofill  from "../components/cuisineAutofill";
+import  CuisineAutofill  from "../components/CuisineAutofill";
 
 const cuisines = [
   "Amish and Mennonite",
