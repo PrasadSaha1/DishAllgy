@@ -13,6 +13,7 @@ function LogInForm() {
             const res = await api.post("api/token/", { username, password });
             localStorage.setItem(ACCESS_TOKEN, res.data.access);
             localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
+            toast("Successfuly logged in!")
             navigate('/');
         } catch (err) {
             const data = err.response?.data;

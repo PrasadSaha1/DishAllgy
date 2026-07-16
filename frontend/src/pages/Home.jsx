@@ -174,6 +174,7 @@ function StopSearchDisplay({ currentState, stopSearch, isLoggedIn, saveSearch, s
 
 export default function Home() {
     const [username, setUsername] = useState("");
+
     const [allergens, setAllergens] = useState([])
     const [recipeSearchResult, setRecipeSearchResult] = useState(null);
     const [cuisineSearchResult, setCuisineSearchResult] = useState(null);
@@ -206,14 +207,16 @@ export default function Home() {
 
     const getSavedRecipes = async () => {
       var recipeURLs = [];
-      const res = await api.get(
-        "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
-      );
-      res.data.saved_recipes.forEach(recipe => {
+      if (isAuthenticated()){
+        const res = await api.get(
+          "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
+        );
+              res.data.saved_recipes.forEach(recipe => {
           recipeURLs.push(recipe.url)
         });
       setSavedRecipesURLs(recipeURLs);
-      console.log(recipeURLs);
+      }
+
 
     };
 

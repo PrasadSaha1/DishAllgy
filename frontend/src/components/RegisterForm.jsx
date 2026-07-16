@@ -30,6 +30,7 @@ function RegisterForm() {
             localStorage.setItem(ACCESS_TOKEN, loginRes.data.access);
             localStorage.setItem(REFRESH_TOKEN, loginRes.data.refresh);
             navigate('/');
+            toast("Successfuly created an account!")
         } catch (err) {
             const data = err.response?.data;
             if (data?.username) toast.error(data.username[0]);

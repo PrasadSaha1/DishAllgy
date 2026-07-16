@@ -472,8 +472,12 @@ def save_recipe(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # anyone can call this, but if no logged in, an error will display
 def get_saved_recipes(request):
+    if not request.user.is_authenticated:
+        print("hello")
+        return Response({"saved_recipes": []})
+    
     saved_recipes = SavedRecipe.objects.filter(user=request.user)
     
     data = []

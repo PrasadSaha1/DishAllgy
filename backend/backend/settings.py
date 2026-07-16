@@ -111,8 +111,8 @@ DATABASES = {
         "NAME": "dishallgy_db",
         "USER": "dishallgy_db_user",
         "PASSWORD": "dHFBSl0G2KSNWUkr8usjsb1U9VwqVbkr",
-      #  "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",
-       "HOST": "dpg-d9c35inlk1mc7393aqa0-a",
+       "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",  # development
+      # "HOST": "dpg-d9c35inlk1mc7393aqa0-a",   @ deployment
         "PORT": "5432",
     }
 }
