@@ -163,14 +163,14 @@ function SavedRecipes() {
 
   const getSearches = async () => {
     const res = await api.get(
-      "http://localhost:8000/api/get_saved_searches/"
+      "https://dishallgy-backend.onrender.com/api/get_saved_searches/"
     );
     setSearches(filterObject(res.data.saved_searches));
   };
 
   const getRecipes = async () => {
     const res = await api.get(
-      "http://localhost:8000/api/get_saved_recipes/"
+      "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
     );
     setRecipes(filterObject(res.data.saved_recipes));
   };
@@ -195,7 +195,7 @@ function SavedRecipes() {
 
     try {
       await api.post(
-        "http://localhost:8000/api/delete_saved_recipe_or_search/",
+        "https://dishallgy-backend.onrender.com/api/delete_saved_recipe_or_search/",
         {
           objectID,
           objectType,
@@ -222,7 +222,7 @@ function SavedRecipes() {
   const handleFavorite = async (objectID, objectType) => {
     try {
       await api.post(
-        "http://localhost:8000/api/favorite_recipe_or_search/",
+        "https://dishallgy-backend.onrender.com/api/favorite_recipe_or_search/",
         {
           objectID,
           objectType,

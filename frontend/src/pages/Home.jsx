@@ -207,7 +207,7 @@ export default function Home() {
     const getSavedRecipes = async () => {
       var recipeURLs = [];
       const res = await api.get(
-        "http://localhost:8000/api/get_saved_recipes/"
+        "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
       );
       res.data.saved_recipes.forEach(recipe => {
           recipeURLs.push(recipe.url)
@@ -260,7 +260,7 @@ export default function Home() {
       const allergens = encodeURIComponent(allergensToSend);
       const maxRecipes = encodeURIComponent(maxRecipesToSend);
 
-      const source = new EventSource(`http://localhost:8000/api/search_for_allergens_in_dish/?dish=${dish}&allergens=${allergens}&maxRecipes=${maxRecipes}`);        
+      const source = new EventSource(`https://dishallgy-backend.onrender.com/api/search_for_allergens_in_dish/?dish=${dish}&allergens=${allergens}&maxRecipes=${maxRecipes}`);        
       setDishChecked(dishToSend);
       setAllergensChecked(allergensToSend);
 
@@ -338,7 +338,7 @@ export default function Home() {
       setObjectSaved(true);
 
       try {
-        const res = await api.post("http://localhost:8000/api/save_search/", {
+        const res = await api.post("https://dishallgy-backend.onrender.com/api/save_search/", {
           type: type,
           element: elementChecked,                     
           allergens: allergens,                     
@@ -364,7 +364,7 @@ export default function Home() {
         var search = cuisineChecked;
       }
 
-      const res = await api.post("http://localhost:8000/api/save_recipe/", {
+      const res = await api.post("https://dishallgy-backend.onrender.com/api/save_recipe/", {
         recipe_name: name,
         recipe_description: description,
         recipe_url: link,
@@ -421,7 +421,7 @@ export default function Home() {
       const allergens = encodeURIComponent(allergensToSend);
       const maxRecipes = encodeURIComponent(maxRecipesToSend);
 
-      const source = new EventSource(`http://localhost:8000/api/search_for_allergens_in_cuisine/?cuisine=${cuisine}&allergens=${allergens}&maxRecipes=${maxRecipes}`);  
+      const source = new EventSource(`https://dishallgy-backend.onrender.com/api/search_for_allergens_in_cuisine/?cuisine=${cuisine}&allergens=${allergens}&maxRecipes=${maxRecipes}`);  
 
 
       cuisineSearchRef.current = source;

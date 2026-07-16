@@ -91,7 +91,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = "backend.asgi.application"
-FRONTEND_URL = 'http://localhost:5173' 
+FRONTEND_URL = 'https://dishallgy.onrender.com/' 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -111,7 +111,7 @@ DATABASES = {
         "NAME": "dishallgy_db",
         "USER": "dishallgy_db_user",
         "PASSWORD": "dHFBSl0G2KSNWUkr8usjsb1U9VwqVbkr",
-       # "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",
+      #  "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",
        "HOST": "dpg-d9c35inlk1mc7393aqa0-a",
         "PORT": "5432",
     }

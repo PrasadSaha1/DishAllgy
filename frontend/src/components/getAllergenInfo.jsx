@@ -7,7 +7,7 @@ export const getAllergenInfo = async () => {
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch("http://localhost:8000/api/fetch_allergens_request/", {
+    const res = await fetch("https://dishallgy-backend.onrender.com/api/fetch_allergens_request/", {
         method: "GET",
         headers
     });

@@ -9,7 +9,7 @@ function AddEmailForm() {
 
     const handleAddEmailSubmit = async ({ email }) => {
         try {
-            const res = await api.post('http://localhost:8000/api/add_email/', {
+            const res = await api.post('https://dishallgy-backend.onrender.com/api/add_email/', {
                 email: email
             });
             navigate('/settings'); 

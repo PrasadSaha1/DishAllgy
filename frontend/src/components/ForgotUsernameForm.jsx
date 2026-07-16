@@ -10,7 +10,7 @@ function ForgotUsernameForm() {
 
     const handleForgotUsernameSubmit = async ({ email }) => {
         try {
-            const res = await api.post('http://localhost:8000/api/forgot_username/', {
+            const res = await api.post('https://dishallgy-backend.onrender.com/api/forgot_username/', {
                 email: email,
             });
             toast("An email has been sent to your address with your username(s).");
