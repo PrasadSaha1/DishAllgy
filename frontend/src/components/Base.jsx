@@ -10,9 +10,7 @@ export default function Base({ children }) {
     <div className="base-container">
       <header className="base-header">
         <div className="header-content">
-          <Link to="/" className="brand-title">
             DishAllgy
-          </Link>
 
           <nav className="nav-links">
             <Link to="/">Home</Link>
