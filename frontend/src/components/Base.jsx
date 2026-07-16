@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/Base.css';
 import { isAuthenticated } from '../components/checkAuth';
 
@@ -9,19 +10,22 @@ export default function Base({ children }) {
     <div className="base-container">
       <header className="base-header">
         <div className="header-content">
-          <h1 className="brand-title">DishAllgy</h1>
+          <Link to="/" className="brand-title">
+            DishAllgy
+          </Link>
+
           <nav className="nav-links">
-            <a href="/">Home</a>
+            <Link to="/">Home</Link>
 
             {loggedIn ? (
               <>
-                <a href="/settings">Settings</a>
-                <a href="/saved_recipes">Saved Recipes</a>
+                <Link to="/settings">Settings</Link>
+                <Link to="/saved_recipes">Saved Recipes</Link>
               </>
             ) : (
               <>
-                <a href="/register">Create an Account</a>
-                <a href="/login">Log in</a>
+                <Link to="/register">Create an Account</Link>
+                <Link to="/login">Log in</Link>
               </>
             )}
           </nav>
