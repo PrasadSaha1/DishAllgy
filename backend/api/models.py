@@ -6,7 +6,7 @@ class SavedSearch(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # timestamp
 
     type = models.CharField(max_length=50, default="recipe")  # e.g., 'recipe', 'cuisine'
-    element = models.CharField(max_length=200)  
+    element = models.CharField(max_length=1000)  
     allergens = models.JSONField(default=list)  
     num_recipes = models.IntegerField(default=0)  
     num_recipes_with_allergen = models.IntegerField(default=0)  
