@@ -271,7 +271,7 @@ def search_for_allergens_in_dish(request):
     print("URL:", search_url, flush=True)
     print("STATUS:", result.status_code, flush=True)
     print("LENGTH:", len(result.text), flush=True)
-    print("FIRST 200 CHARS:", result.text[:200], flush=True)
+    print("FIRST 500 CHARS:", result.text, flush=True)
 
     doc = BeautifulSoup(result.text, "html.parser")
 
