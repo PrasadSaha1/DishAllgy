@@ -198,7 +198,7 @@ def change_email(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def contact_us(request):
-    print("test")
+    # print("test")
     email = request.data.get("email")
     subject = request.data.get("subject")
     message = request.data.get("message")
@@ -247,7 +247,7 @@ def spell_check(text):
     return final_text
 
 def search_for_allergens_in_dish(request):
-    print("ENTERED search_for_allergens_in_dish", flush=True)
+    # print("ENTERED search_for_allergens_in_dish", flush=True)
     dish = request.GET.get("dish")
     allergens = request.GET.get("allergens")
     try:
@@ -268,10 +268,10 @@ def search_for_allergens_in_dish(request):
 
     result = requests.get(search_url, headers=headers)
 
-    print("URL:", search_url, flush=True)
-    print("STATUS:", result.status_code, flush=True)
-    print("LENGTH:", len(result.text), flush=True)
-    print("FIRST 500 CHARS:", result.text, flush=True)
+    # print("URL:", search_url, flush=True)
+    # print("STATUS:", result.status_code, flush=True)
+    # print("LENGTH:", len(result.text), flush=True)
+    # print("FIRST 500 CHARS:", result.text, flush=True)
 
     doc = BeautifulSoup(result.text, "html.parser")
 
