@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-f#jo49#%@-_p%r3hih#wgs!2%#d#=luv35u8y9iu=83$0!os5='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -62,6 +62,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,7 +70,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -111,8 +111,8 @@ DATABASES = {
         "NAME": "dishallgy_db",
         "USER": "dishallgy_db_user",
         "PASSWORD": "dHFBSl0G2KSNWUkr8usjsb1U9VwqVbkr",
-       "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",  # development
-      # "HOST": "dpg-d9c35inlk1mc7393aqa0-a",   @ deployment
+     #  "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",  # development
+       "HOST": "dpg-d9c35inlk1mc7393aqa0-a",   #ep deployment
         "PORT": "5432",
     }
 }
@@ -162,7 +162,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWS_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

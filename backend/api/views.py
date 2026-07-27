@@ -198,6 +198,7 @@ def change_email(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def contact_us(request):
+    print("test")
     email = request.data.get("email")
     subject = request.data.get("subject")
     message = request.data.get("message")
@@ -222,7 +223,6 @@ def fetch_allergens_request(request):
 def check_url(args):
     url, allergens = args
     try:
-        print(url, allergens)
         recipe = check_ingredients(url, allergens)
         return (url, *recipe)
     except Exception as e:
@@ -247,6 +247,7 @@ def spell_check(text):
     return final_text
 
 def search_for_allergens_in_dish(request):
+    print("ENTERED search_for_allergens_in_dish", flush=True)
     dish = request.GET.get("dish")
     allergens = request.GET.get("allergens")
     try:
@@ -257,7 +258,21 @@ def search_for_allergens_in_dish(request):
     dish = spell_check(dish)
 
     search_url = f"https://www.allrecipes.com/search?q={dish}"
-    result = requests.get(search_url)
+    
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+        )
+    }
+
+    result = requests.get(search_url, headers=headers)
+
+    print("URL:", search_url, flush=True)
+    print("STATUS:", result.status_code, flush=True)
+    print("LENGTH:", len(result.text), flush=True)
+    print("FIRST 200 CHARS:", result.text[:200], flush=True)
+
     doc = BeautifulSoup(result.text, "html.parser")
 
     hrefs = [a['href'] for a in doc.find_all('a', href=True)]
@@ -270,7 +285,11 @@ def search_for_allergens_in_dish(request):
         def event_stream():
             yield "event: error\ndata: No recipes found\n\n"
 
-        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"
+        return response
+    
 
     def event_stream():
         if not valid_recipes:
@@ -283,7 +302,6 @@ def search_for_allergens_in_dish(request):
 
         urls_with_allergen = []
         urls_without_allergen = []
-        print("Mbappe")
         with ThreadPoolExecutor(max_workers=8) as executor:
             for i, result in enumerate(executor.map(check_url, [(url, allergens) for url in valid_recipes])):
                 # results.append(result)
@@ -314,8 +332,11 @@ def search_for_allergens_in_dish(request):
                 if i == len(valid_recipes) - 1:
                     yield "event: done\ndata: {}\n\n"
 
-    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
- 
+    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
+
 def search_for_allergens_in_cuisine(request):
     cuisine = request.GET.get("cuisine")
     allergens = request.GET.get("allergens")
@@ -327,7 +348,14 @@ def search_for_allergens_in_cuisine(request):
     cuisine = spell_check(cuisine)
 
     cuisine_search_url = "https://www.allrecipes.com/cuisine-a-z-6740455"
-    result = requests.get(cuisine_search_url)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+        )
+    }
+
+    result = requests.get(cuisine_search_url, headers=headers)
     doc = BeautifulSoup(result.text, "html.parser")
 
     hrefs = [a['href'] for a in doc.find_all('a', href=True)]
@@ -344,7 +372,14 @@ def search_for_allergens_in_cuisine(request):
             break
     else:
         search_url = f"https://www.allrecipes.com/search?q={cuisine}"
-        result = requests.get(search_url)
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+            )
+        }
+
+        result = requests.get(search_url, headers=headers)
         doc = BeautifulSoup(result.text, "html.parser")
 
         hrefs = [a['href'] for a in doc.find_all('a', href=True)]
@@ -357,8 +392,11 @@ def search_for_allergens_in_cuisine(request):
         def event_stream():
             yield "event: error\ndata: No recipes found\n\n"
 
-        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-
+        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"
+        return response
+    
     def event_stream():
         num_recipes = 0
         num_recipes_with_allergen = 0
@@ -395,7 +433,10 @@ def search_for_allergens_in_cuisine(request):
                     yield "event: done\ndata: {}\n\n"
 
 
-    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -475,7 +516,6 @@ def save_recipe(request):
 @permission_classes([AllowAny])  # anyone can call this, but if no logged in, an error will display
 def get_saved_recipes(request):
     if not request.user.is_authenticated:
-        print("hello")
         return Response({"saved_recipes": []})
     
     saved_recipes = SavedRecipe.objects.filter(user=request.user)

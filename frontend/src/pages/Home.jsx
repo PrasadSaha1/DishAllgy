@@ -138,7 +138,6 @@ function StopSearchDisplay({ currentState, stopSearch, isLoggedIn, saveSearch, s
     );
   } else {
       if (isLoggedIn) {
-        console.log(searchSaved)
         if (searchSaved) {
           return (
           <div>
@@ -263,6 +262,7 @@ export default function Home() {
       const allergens = encodeURIComponent(allergensToSend);
       const maxRecipes = encodeURIComponent(maxRecipesToSend);
 
+      
       const source = new EventSource(`https://dishallgy-backend.onrender.com/api/search_for_allergens_in_dish/?dish=${dish}&allergens=${allergens}&maxRecipes=${maxRecipes}`);        
       setDishChecked(dishToSend);
       setAllergensChecked(allergensToSend);
@@ -299,7 +299,7 @@ export default function Home() {
     source.addEventListener("error", (event) => {
       try {
         const data = event.data ? JSON.parse(event.data) : null;
-        setError("No results found. Input may be invalid");
+       // setError("No results found. Input may be invalid");
       } catch {
         setError("No results found. Input may be invalid");
       }
@@ -307,6 +307,7 @@ export default function Home() {
       source.close();
       setInRecipeSearch(false);
     });
+    
                   
 
     } catch (err) {
@@ -426,7 +427,6 @@ export default function Home() {
 
       const source = new EventSource(`https://dishallgy-backend.onrender.com/api/search_for_allergens_in_cuisine/?cuisine=${cuisine}&allergens=${allergens}&maxRecipes=${maxRecipes}`);  
 
-
       cuisineSearchRef.current = source;
 
       setCuisineSearchResult(true);
@@ -455,20 +455,10 @@ export default function Home() {
       });
       source.addEventListener("error", (event) => {
         console.error("Error event:", event.data);
+        setError("No results found. Input may be invalid");
         setInCuisineSearch(false);
         source.close();
       });
-    source.addEventListener("error", (event) => {
-      try {
-        const data = event.data ? JSON.parse(event.data) : null;
-        setError("No results found. Input may be invalid");
-      } catch {
-        setError("No results found. Input may be invalid");
-      }
-
-      source.close();
-      setInCuisineSearch(false);
-    });
                 
 
     } catch (err) {
