@@ -39,8 +39,6 @@ function RecipeDisplay({ recipes, handleDelete, handleFavorite }) {
             )
           </label>
 
-          <label>{recipe.description}</label>
-
           <p>
             <strong>{title(recipe.type)}:</strong> {recipe.element_name}
           </p>
@@ -68,6 +66,7 @@ function RecipeDisplay({ recipes, handleDelete, handleFavorite }) {
 }
 
 function SearchDisplay({ searches, handleDelete, handleFavorite }) {
+  console.log(searches)
   return (
     <div className="search-results">
       {searches.length === 0 ? (
@@ -91,7 +90,7 @@ function SearchDisplay({ searches, handleDelete, handleFavorite }) {
               </p>
 
               <p>
-                <strong>Dish:</strong> {search.element}
+                <strong>Search:</strong> {search.element}
               </p>
 
               <p>
@@ -104,18 +103,13 @@ function SearchDisplay({ searches, handleDelete, handleFavorite }) {
               </p>
 
               <p>
-                <strong>Recipes with Allergen:</strong>{" "}
-                {search.num_recipes_with_allergen}
-              </p>
-
-              <p>
                 <strong>Recipe URLs:</strong>
               </p>
 
               {search.recipe_urls.map((recipe, idx) => (
                 <div key={idx}>
-                  <a href={recipe[0]} target="_blank" rel="noopener noreferrer">
-                    {recipe[2]}
+                  <a href={recipe.website_url} target="_blank" rel="noopener noreferrer">
+                    {recipe.name}
                   </a>
                 </div>
               ))}
@@ -163,14 +157,14 @@ function SavedRecipes() {
 
   const getSearches = async () => {
     const res = await api.get(
-      "https://dishallgy-backend.onrender.com/api/get_saved_searches/"
+      "http://localhost:8000/api/get_saved_searches/"
     );
     setSearches(filterObject(res.data.saved_searches));
   };
 
   const getRecipes = async () => {
     const res = await api.get(
-      "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
+      "http://localhost:8000/api/get_saved_recipes/"
     );
     setRecipes(filterObject(res.data.saved_recipes));
   };
@@ -195,7 +189,7 @@ function SavedRecipes() {
 
     try {
       await api.post(
-        "https://dishallgy-backend.onrender.com/api/delete_saved_recipe_or_search/",
+        "http://localhost:8000/api/delete_saved_recipe_or_search/",
         {
           objectID,
           objectType,
@@ -222,7 +216,7 @@ function SavedRecipes() {
   const handleFavorite = async (objectID, objectType) => {
     try {
       await api.post(
-        "https://dishallgy-backend.onrender.com/api/favorite_recipe_or_search/",
+        "http://localhost:8000/api/favorite_recipe_or_search/",
         {
           objectID,
           objectType,

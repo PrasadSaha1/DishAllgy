@@ -25,9 +25,9 @@ import time
 import uuid
 from api.allergen_worker import check_url  # This module has no Django imports
 from concurrent.futures import ThreadPoolExecutor
-from spellchecker import SpellChecker
 from .models import SavedSearch, SavedRecipe
-
+from .spoonacular import api_request
+from .helper_functions import spell_check
 
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -231,23 +231,38 @@ def check_url(args):
 def sse_event(event: str, data: str):
     return f"event: {event}\ndata: {data}\n\n"
 
-def spell_check(text):
-    spell = SpellChecker()
-    words = text.split()
-    corrected_text = []
 
-    for word in words:
-        correct_word = spell.correction(word)
-        if not correct_word:
-            corrected_text.append(word)  # If no correction found, keep the original word
-        else:
-            corrected_text.append(spell.correction(word))
+@api_view(['POST'])
+@permission_classes([AllowAny])  # anyone can access
+def search_for_recipes(request):
+    type = request.data.get("type")  # dish or cuisine
+    query = request.data.get("query")
+    raw_allergens = request.data.get("allergens")
 
-    final_text = " ".join(corrected_text)
-    return final_text
+    query = spell_check(query)
+    # formatted_allergens = [f"{allergen}-free" for allergen in raw_allergens]       
+
+    recipes = api_request(type, query, raw_allergens)
+    return Response({"recipes": recipes})
+
+"""
+@api_view(['POST'])
+def search_for_allergens_in_dish(request):
+    dish = request.data.get("dish")
+    raw_allergens = request.data.get("allergens")
+
+    dish = spell_check(dish)
+    formatted_allergens = [f"{allergen}-free" for allergen in raw_allergens]       
+
+    recipes = api_request("dish", dish, formatted_allergens)
+    return Response({"recipes": recipes})
+
+@api_view(['POST'])
+def search_for_allergens_in_cuisine(request):
+    return Response({"message": "hello world"})
+
 
 def search_for_allergens_in_dish(request):
-    # print("ENTERED search_for_allergens_in_dish", flush=True)
     dish = request.GET.get("dish")
     allergens = request.GET.get("allergens")
     try:
@@ -437,6 +452,8 @@ def search_for_allergens_in_cuisine(request):
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
     return response
+"""
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -445,7 +462,6 @@ def save_search(request):
     element = request.data.get("element")
     allergens = request.data.get("allergens")
     num_recipes = request.data.get("num_recipes")
-    num_recipes_with_allergen = request.data.get("num_recipes_with_allergen")
     recipe_urls = request.data.get("recipe_urls")
 
     try:
@@ -455,10 +471,10 @@ def save_search(request):
             element=element,
             allergens=allergens,
             num_recipes=num_recipes,
-            num_recipes_with_allergen=num_recipes_with_allergen,
             recipe_urls=recipe_urls
         )
     except Exception as e:
+        print(e)
         pass
 
     # Logic to save the search for the user
@@ -492,7 +508,6 @@ def save_recipe(request):
     recipe_name = request.data.get("recipe_name")
     recipe_url = request.data.get("recipe_url")
     recipe_image = request.data.get("recipe_image")
-    recipe_description = request.data.get("recipe_description")
     
     element_name = request.data.get("element_name")
     element_type = request.data.get("element_type")
@@ -503,7 +518,6 @@ def save_recipe(request):
         recipe_name=recipe_name,
         recipe_url=recipe_url,
         recipe_image=recipe_image,
-        recipe_description=recipe_description,
         element_name=element_name,
         element_type=element_type,
         allergens=allergens
@@ -530,7 +544,6 @@ def get_saved_recipes(request):
             "name": recipe.recipe_name,
             "image": recipe.recipe_image,
             "url": recipe.recipe_url,
-            "description": recipe.recipe_description,
             "created_at": recipe.created_at.isoformat(),
             "is_favorite": recipe.is_favorite,
         })

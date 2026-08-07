@@ -91,8 +91,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = "backend.asgi.application"
-FRONTEND_URL = 'https://dishallgy.onrender.com/' 
-
+# FRONTEND_URL = 'https://dishallgy.onrender.com/' 
+FRONTEND_URL = 'http://localhost:5173/'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -105,17 +105,19 @@ DATABASES = {
 }
 """
 
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "dishallgy_db",
         "USER": "dishallgy_db_user",
         "PASSWORD": "dHFBSl0G2KSNWUkr8usjsb1U9VwqVbkr",
-     # "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",  # development
-     "HOST": "dpg-d9c35inlk1mc7393aqa0-a",   # deployment
+      "HOST": "dpg-d9c35inlk1mc7393aqa0-a.oregon-postgres.render.com",  # development
+     # "HOST": "dpg-d9c35inlk1mc7393aqa0-a",   # deployment
         "PORT": "5432",
     }
 }
+
 
 
 
@@ -163,6 +165,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

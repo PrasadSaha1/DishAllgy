@@ -10,11 +10,15 @@ function title(string) {
 }
 
 function formatAllergens(allergens) {
+  try {
     if (!allergens.join(", ")) { 
-        return "None"
-    }
+          return "None"
+      }
 
-    return title(allergens.join(", ")) 
+      return title(allergens.join(", ")) 
+  } catch {
+    return "None"
+  }
 }
 
 export { title, formatAllergens };
