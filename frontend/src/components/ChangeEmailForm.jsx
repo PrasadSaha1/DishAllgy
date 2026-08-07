@@ -10,7 +10,7 @@ function ChangeEmailForm() {
 
     const handleChangeEmailSubmit = async ({ email, password }) => {
         try {
-            const res = await api.post('http://localhost:8000/api/change_email/', {
+            const res = await api.post('https://dishallgy-backend.onrender.com/api/change_email/', {
                 email: email,
                 password: password,
             });

@@ -10,7 +10,7 @@ function ContactUsForm() {
 
     const handleContactUsSubmit = async ({ email, subject, message }) => {
         try {
-            const res = await api.post('http://localhost:8000/api/contact_us/', {
+            const res = await api.post('https://dishallgy-backend.onrender.com/api/contact_us/', {
                 email: email,
                 subject: subject,
                 message: message

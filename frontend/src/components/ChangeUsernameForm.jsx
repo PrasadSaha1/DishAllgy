@@ -10,7 +10,7 @@ function ChangeUsernameForm() {
 
     const handleChangeUsernameSubmit = async ({ username, password }) => {
         try {
-            const res = await api.post('http://localhost:8000/api/change_username/', {
+            const res = await api.post('https://dishallgy-backend.onrender.com/api/change_username/', {
                 username: username,
                 password: password,
             });

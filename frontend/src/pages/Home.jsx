@@ -205,7 +205,7 @@ export default function Home() {
       var recipeURLs = [];
       if (isAuthenticated()){
         const res = await api.get(
-          "http://localhost:8000/api/get_saved_recipes/"
+          "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
         );
               res.data.saved_recipes.forEach(recipe => {
           recipeURLs.push(recipe.url)
@@ -254,7 +254,7 @@ export default function Home() {
         setDishError("")
         setSearchSaved_Dish(false)
         console.log("uno")
-        const res = await api.post('http://localhost:8000/api/search_for_recipes/', {
+        const res = await api.post('https://dishallgy-backend.onrender.com/api/search_for_recipes/', {
             type: "dish",
             query: dishToSend,
             allergens: allergensToSend,
@@ -297,7 +297,7 @@ export default function Home() {
         setInCuisineSearch(true)
         setCuisineError("")
         setSearchSaved_Cuisine(false)
-        const res = await api.post('http://localhost:8000/api/search_for_recipes/', {
+        const res = await api.post('https://dishallgy-backend.onrender.com/api/search_for_recipes/', {
             type: "cuisine",
             query: cuisineToSend,
             allergens: allergensToSend,
@@ -339,7 +339,7 @@ export default function Home() {
       setObjectSaved(true);
 
       try {
-        const res = await api.post("http://localhost:8000/api/save_search/", {
+        const res = await api.post("https://dishallgy-backend.onrender.com/api/save_search/", {
           type: type,
           element: elementChecked,                     
           allergens: allergens,                     
@@ -364,7 +364,7 @@ export default function Home() {
         var search = cuisineChecked;
       }
 
-      const res = await api.post("http://localhost:8000/api/save_recipe/", {
+      const res = await api.post("https://dishallgy-backend.onrender.com/api/save_recipe/", {
         recipe_name: name,
         recipe_url: link,
         recipe_image: image,

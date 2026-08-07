@@ -10,7 +10,7 @@ function ForgotPasswordForm() {
 
     const handleForgotPasswordSubmit = async ({ username }) => {
         try {
-            const res = await api.post('http://localhost:8000/api/forgot_password/', {
+            const res = await api.post('https://dishallgy-backend.onrender.com/api/forgot_password/', {
                 username: username,
             });
             toast("An email has been sent to your address with instructions to reset your password.");
