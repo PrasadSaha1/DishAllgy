@@ -221,6 +221,7 @@ export default function Home() {
         setInRecipeSearch(true)
         setDishError("")
         setSearchSaved_Dish(false)
+        console.log("API URL:", import.meta.env.VITE_API_URL);
         const res = await api.post(`${import.meta.env.VITE_API_URL}/api/search_for_recipes/`, {
             type: "dish",
             query: dishToSend,
