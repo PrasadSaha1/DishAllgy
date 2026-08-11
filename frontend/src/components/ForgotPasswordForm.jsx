@@ -1,5 +1,5 @@
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GeneralForm from './GeneralForm';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import { ToastContainer, toast } from 'react-toastify';
@@ -10,10 +10,10 @@ function ForgotPasswordForm() {
 
     const handleForgotPasswordSubmit = async ({ username }) => {
         try {
-            const res = await api.post('https://dishallgy-backend.onrender.com/api/forgot_password/', {
+            const res = await api.post(`${import.meta.env.VITE_API_URL}/api/forgot_password/`, {
                 username: username,
             });
-            toast("An email has been sent to your address with instructions to reset your password.");
+            toast.success("An email has been sent to your address with instructions to reset your password.");
         } catch (err) {
             if (err.status === 404){
                 toast.error("No email associated with this username.");
@@ -32,10 +32,10 @@ function ForgotPasswordForm() {
             bottomText={
                 <>
                     <h6>
-                        Remember your password? Log in <a href="/login">here</a>.
+                        Remember your password? Log in <Link to="/login">here</Link>.
                     </h6>
                     <h6 style={{ marginTop: "15px" }}>
-                        Forgot your username? Click <a href="/forgot_username">here</a> to retrieve it.
+                        Forgot your username? Click <Link to="/forgot_username">here</Link> to retrieve it.
                     </h6>
                 </>
             }

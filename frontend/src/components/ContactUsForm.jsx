@@ -1,5 +1,5 @@
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import GeneralForm from './GeneralForm';
 import { ToastContainer, toast } from 'react-toastify';
@@ -10,12 +10,12 @@ function ContactUsForm() {
 
     const handleContactUsSubmit = async ({ email, subject, message }) => {
         try {
-            const res = await api.post('https://dishallgy-backend.onrender.com/api/contact_us/', {
+            const res = await api.post(`${import.meta.env.VITE_API_URL}/api/contact_us/`, {
                 email: email,
                 subject: subject,
                 message: message
             });
-            toast("Message sent!")
+            toast.success("Message sent!")
         } catch (err) {
             if (err.status === 401){
                 toast.error("Invalid email address");
@@ -31,7 +31,7 @@ function ContactUsForm() {
             showMessage={true}
             onSubmit={handleContactUsSubmit}
             bottomText={
-                <a className="btn btn-primary" href="/settings">Back to Settings</a>
+                <Link className="btn btn-primary" to="/about">Back to About Us</Link>
             }
         />
     );

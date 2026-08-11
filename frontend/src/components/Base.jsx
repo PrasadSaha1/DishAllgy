@@ -17,13 +17,15 @@ export default function Base({ children }) {
 
             {loggedIn ? (
               <>
-                <Link to="/settings">Settings</Link>
                 <Link to="/saved_recipes">Saved Recipes</Link>
+                <Link to="/settings">Settings</Link>
+                <Link to="/about">About Us</Link>
               </>
             ) : (
               <>
                 <Link to="/register">Create an Account</Link>
                 <Link to="/login">Log in</Link>
+                <Link to="/about">About Us</Link>
               </>
             )}
           </nav>

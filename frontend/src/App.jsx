@@ -18,6 +18,7 @@ import ResetPassword from './pages/ResetPassword';
 import ContactUs from './pages/ContactUs';
 import { ToastContainer } from 'react-toastify';
 import SavedRecipes from './pages/SavedRecipes';
+import About from './pages/About';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
@@ -95,6 +96,7 @@ function App() {
 
       <Route path="/reset_password/:uid/:token" element={<ResetPassword />} />
       <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     <ToastContainer

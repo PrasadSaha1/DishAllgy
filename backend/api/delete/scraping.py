@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 import re
-from constants import COMMON_ALLERGENS
+from backend.api.delete.constants import COMMON_ALLERGENS
 
 def check_ingredients(url, allergens):
     result = requests.get(url)

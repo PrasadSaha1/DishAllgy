@@ -1,5 +1,5 @@
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import GeneralForm from './GeneralForm';
 import { ToastContainer, toast } from 'react-toastify';
@@ -10,18 +10,19 @@ function ChangeUsernameForm() {
 
     const handleChangeUsernameSubmit = async ({ username, password }) => {
         try {
-            const res = await api.post('https://dishallgy-backend.onrender.com/api/change_username/', {
+            const res = await api.post(`${import.meta.env.VITE_API_URL}/api/change_username/`, {
                 username: username,
                 password: password,
             });
             navigate('/settings'); 
+            toast.success("Username changed successfully!")
         } catch (err) {
             if (err.status === 401){
-                alert("Invalid password");
+                toast.error("Invalid password");
             } else if (err.status === 409) {
-                alert("Username already taken");
+                toast.error("Username already taken");
             } else if (err.status === 400) {
-                alert("Username must be at least 8 characters long");
+                toast.error("Username must be at least 8 characters long");
             }
         }
 
@@ -35,7 +36,7 @@ function ChangeUsernameForm() {
             usernameDescription={"New Username"}
             onSubmit={handleChangeUsernameSubmit}
             bottomText={
-                <a className="btn btn-primary" href="/settings">Back</a>
+                <Link className="btn btn-primary" to="/settings">Back</Link>
             }
         />
     );

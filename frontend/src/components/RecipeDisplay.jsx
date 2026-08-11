@@ -1,8 +1,7 @@
 import { useState } from 'react';
 
-function RecipeDisplay({ recipeUrls, isLoggedIn, saveRecipe, type, savedRecipesURLs }) {
+function RecipeDisplay({ recipeUrls, isLoggedIn, saveRecipe, type, savedRecipesURLs, loadingRecipesUrls }) {
   const [recipeSaved, setRecipeSaved] = useState({});
-
 
 //     const saveRecipe = async (link, image, name, type, setRecipeSaved) => {
 
@@ -38,7 +37,7 @@ function RecipeDisplay({ recipeUrls, isLoggedIn, saveRecipe, type, savedRecipesU
           <div dangerouslySetInnerHTML={{ __html: recipe.description }} />
           */}
 
-          {isLoggedIn && !savedRecipesURLs.includes(recipe.website_url) && (
+          {isLoggedIn && !savedRecipesURLs.includes(recipe.website_url) && !loadingRecipesUrls.includes(recipe.website_url) && (
             <button
               className="btn btn-success"
               style={{marginTop: "10px"}}
@@ -49,9 +48,14 @@ function RecipeDisplay({ recipeUrls, isLoggedIn, saveRecipe, type, savedRecipesU
             </button>
           )}
 
-          {isLoggedIn && savedRecipesURLs.includes(recipe[0]) && (
-            <h3>Recipe Saved!</h3>
+          {isLoggedIn && loadingRecipesUrls.includes(recipe.website_url) && (
+            <h3 style={{"marginTop": "10px"}}>Saving Recipe...</h3>
           )}
+
+          {isLoggedIn && savedRecipesURLs.includes(recipe.website_url) && (
+            <h3 style={{"marginTop": "10px"}}>Recipe Saved!</h3>
+          )}
+
         </div>
       ))}
     </div>

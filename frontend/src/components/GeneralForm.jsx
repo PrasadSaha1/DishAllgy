@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import "../styles/Form.css";
 import Base from '../components/Base';
-import LoadingIndicator from './LoadingIndicator';
 
 function GeneralForm({
     mode,                             

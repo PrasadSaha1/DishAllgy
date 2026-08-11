@@ -12,7 +12,9 @@ class SavedSearch(models.Model):
     num_recipes_with_allergen = models.IntegerField(default=0)  
     recipe_urls = models.JSONField(default=list)  
     is_favorite = models.BooleanField(default=False)
-
+    percent_safe_recipes = models.FloatField(default=0)
+    unsafe_recipes = models.JSONField(default=list)
+    
 class SavedRecipe(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_recipes')
     created_at = models.DateTimeField(auto_now_add=True)    

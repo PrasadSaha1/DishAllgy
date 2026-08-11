@@ -1,5 +1,5 @@
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import GeneralForm from './GeneralForm';
 import { ToastContainer, toast } from 'react-toastify';
@@ -10,11 +10,12 @@ function ChangeEmailForm() {
 
     const handleChangeEmailSubmit = async ({ email, password }) => {
         try {
-            const res = await api.post('https://dishallgy-backend.onrender.com/api/change_email/', {
+            const res = await api.post(`${import.meta.env.VITE_API_URL}/api/change_email/`, {
                 email: email,
                 password: password,
             });
             navigate('/settings'); 
+            toast.success("Email changed successfully!")
         } catch (err) {
             if (err.status === 401){
                 toast.error("Invalid email address");
@@ -32,7 +33,7 @@ function ChangeEmailForm() {
             showPassword={true}
             onSubmit={handleChangeEmailSubmit}
             bottomText={
-                <a className="btn btn-primary" href="/settings">Back</a>
+                <Link className="btn btn-primary" to="/settings">Back</Link>
             }
         />
         

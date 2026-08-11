@@ -11,20 +11,6 @@ import re
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.urls import reverse
-import constants
-from .scraping import check_dish, check_cuisine, check_ingredients, get_urls
-import requests
-from bs4 import BeautifulSoup
-from django.http import StreamingHttpResponse
-from django.core.cache import cache
-import random 
-import json
-import asyncio
-import time
-import uuid
-from api.allergen_worker import check_url  # This module has no Django imports
-from concurrent.futures import ThreadPoolExecutor
 from .models import SavedSearch, SavedRecipe
 from .spoonacular import api_request
 from .helper_functions import spell_check
@@ -48,7 +34,6 @@ def user_view(request):
 @permission_classes([AllowAny])
 def forgot_username(request):
     email = request.data.get('email')
-    # user = User.objects.get(username=username)
     users = User.objects.filter(email=email)
 
     if not users.exists():
@@ -198,7 +183,6 @@ def change_email(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def contact_us(request):
-    # print("test")
     email = request.data.get("email")
     subject = request.data.get("subject")
     message = request.data.get("message")
@@ -215,23 +199,6 @@ def contact_us(request):
 
     return Response({'detail': 'Message sent'})
 
-@api_view(['GET'])
-@permission_classes([AllowAny])  # anyone can access
-def fetch_allergens_request(request):
-    return Response({"allergens": constants.COMMON_ALLERGENS})
-
-def check_url(args):
-    url, allergens = args
-    try:
-        recipe = check_ingredients(url, allergens)
-        return (url, *recipe)
-    except Exception as e:
-        return (url, "fail", None, None, str(e))
-
-def sse_event(event: str, data: str):
-    return f"event: {event}\ndata: {data}\n\n"
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])  # anyone can access
 def search_for_recipes(request):
@@ -240,220 +207,9 @@ def search_for_recipes(request):
     raw_allergens = request.data.get("allergens")
 
     query = spell_check(query)
-    # formatted_allergens = [f"{allergen}-free" for allergen in raw_allergens]       
 
-    recipes = api_request(type, query, raw_allergens)
-    return Response({"recipes": recipes})
-
-"""
-@api_view(['POST'])
-def search_for_allergens_in_dish(request):
-    dish = request.data.get("dish")
-    raw_allergens = request.data.get("allergens")
-
-    dish = spell_check(dish)
-    formatted_allergens = [f"{allergen}-free" for allergen in raw_allergens]       
-
-    recipes = api_request("dish", dish, formatted_allergens)
-    return Response({"recipes": recipes})
-
-@api_view(['POST'])
-def search_for_allergens_in_cuisine(request):
-    return Response({"message": "hello world"})
-
-
-def search_for_allergens_in_dish(request):
-    dish = request.GET.get("dish")
-    allergens = request.GET.get("allergens")
-    try:
-        max_recipes = int(request.GET.get("maxRecipes"))
-    except (ValueError, TypeError):
-        max_recipes = 999999
-
-    dish = spell_check(dish)
-
-    search_url = f"https://www.allrecipes.com/search?q={dish}"
-    
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 Chrome/120 Safari/537.36"
-        )
-    }
-
-    result = requests.get(search_url, headers=headers)
-
-    # print("URL:", search_url, flush=True)
-    # print("STATUS:", result.status_code, flush=True)
-    # print("LENGTH:", len(result.text), flush=True)
-    # print("FIRST 500 CHARS:", result.text, flush=True)
-
-    doc = BeautifulSoup(result.text, "html.parser")
-
-    hrefs = [a['href'] for a in doc.find_all('a', href=True)]
-    try:
-        valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')][:max_recipes]
-    except Exception as e:
-        valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
-   
-    if not valid_recipes:
-        def event_stream():
-            yield "event: error\ndata: No recipes found\n\n"
-
-        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-        response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffering"] = "no"
-        return response
-    
-
-    def event_stream():
-        if not valid_recipes:
-            yield sse_event("error", "No recipes found")
-            return
-        
-        num_recipes = 0
-        num_recipes_with_allergen = 0
-        num_fails = 0
-
-        urls_with_allergen = []
-        urls_without_allergen = []
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            for i, result in enumerate(executor.map(check_url, [(url, allergens) for url in valid_recipes])):
-                # results.append(result)
-                
-                if result[1] == "fail":
-                    num_fails += 1
-                else:
-                    num_recipes += 1
-
-                if result[1] == "allergen":
-                    num_recipes_with_allergen += 1
-                    urls_with_allergen.append([result[0], result[2], result[3], result[4]])
-                elif result[1] == "no allergen":
-                    urls_without_allergen.append([result[0], result[2], result[3], result[4]])
-
-                if i % 5 == 4 or i == len(valid_recipes) - 1 or True:
-                    data = {
-                        "num_total_recipes": len(valid_recipes),
-                        "num_recipes": num_recipes,
-                        "num_recipes_with_allergen": num_recipes_with_allergen,
-                        "urls_without_allergen": urls_without_allergen,
-                        "urls_with_allergen": urls_with_allergen,
-                        "num_fails": num_fails,
-                    }
-                    # SSE format: "data: <json>\n\n"
-                    yield f"data: {json.dumps(data)}\n\n"
-                
-                if i == len(valid_recipes) - 1:
-                    yield "event: done\ndata: {}\n\n"
-
-    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-    response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
-    return response
-
-def search_for_allergens_in_cuisine(request):
-    cuisine = request.GET.get("cuisine")
-    allergens = request.GET.get("allergens")
-    try:
-        max_recipes = int(request.GET.get("maxRecipes"))
-    except (ValueError, TypeError):
-        max_recipes = 999999
-
-    cuisine = spell_check(cuisine)
-
-    cuisine_search_url = "https://www.allrecipes.com/cuisine-a-z-6740455"
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 Chrome/120 Safari/537.36"
-        )
-    }
-
-    result = requests.get(cuisine_search_url, headers=headers)
-    doc = BeautifulSoup(result.text, "html.parser")
-
-    hrefs = [a['href'] for a in doc.find_all('a', href=True)]
-    cuisine_url = None
-
-    for href in hrefs:
-        if re.search(rf'\b{re.escape(cuisine)}\b', href, re.IGNORECASE) :
-            cuisine_url = href
-            dish_hrefs = get_urls(cuisine_url)
-            try:
-                valid_recipes = dish_hrefs[:max_recipes]
-            except Exception as e:
-                valid_recipes = dish_hrefs
-            break
-    else:
-        search_url = f"https://www.allrecipes.com/search?q={cuisine}"
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 Chrome/120 Safari/537.36"
-            )
-        }
-
-        result = requests.get(search_url, headers=headers)
-        doc = BeautifulSoup(result.text, "html.parser")
-
-        hrefs = [a['href'] for a in doc.find_all('a', href=True)]
-        try:
-            valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')][:max_recipes]
-        except Exception as e:
-            valid_recipes = [href for href in hrefs if href.startswith('https://www.allrecipes.com/recipe/')]
-
-    if not valid_recipes:
-        def event_stream():
-            yield "event: error\ndata: No recipes found\n\n"
-
-        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-        response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffering"] = "no"
-        return response
-    
-    def event_stream():
-        num_recipes = 0
-        num_recipes_with_allergen = 0
-        num_fails = 0
-
-        urls_with_allergen = []
-        urls_without_allergen = []
-
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            for i, result in enumerate(executor.map(check_url, [(url, allergens) for url in valid_recipes])):                
-                if result[1] == "fail":
-                    num_fails += 1
-                else:
-                    num_recipes += 1
-
-                if result[1] == "allergen":
-                    num_recipes_with_allergen += 1
-                    urls_with_allergen.append([result[0], result[2], result[3], result[4]])
-                elif result[1] == "no allergen":
-                    urls_without_allergen.append([result[0], result[2], result[3], result[4]])
-
-                data = {
-                    "num_recipes": num_recipes,
-                    "num_total_recipes": len(valid_recipes),
-                    "num_recipes_with_allergen": num_recipes_with_allergen,
-                    "urls_without_allergen": urls_without_allergen,
-                    "urls_with_allergen": urls_with_allergen,
-                    "num_fails": num_fails,
-                }
-                # SSE format: "data: <json>\n\n"
-                yield f"data: {json.dumps(data)}\n\n"
-                
-                if i == len(valid_recipes) - 1:
-                    yield "event: done\ndata: {}\n\n"
-
-
-    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-    response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
-    return response
-"""
-
+    allergen_free_recipes, recipe_names_containing_allergen, percent_safe_recipes = api_request(type, query, raw_allergens)
+    return Response({"recipes": allergen_free_recipes, "recipes_containing_allergen": recipe_names_containing_allergen, "percent_safe_recipes": percent_safe_recipes})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -463,6 +219,8 @@ def save_search(request):
     allergens = request.data.get("allergens")
     num_recipes = request.data.get("num_recipes")
     recipe_urls = request.data.get("recipe_urls")
+    percent_safe_recipes = request.data.get("percent_safe_recipes")
+    unsafe_recipes = request.data.get("unsafe_recipes")
 
     try:
         SavedSearch.objects.create(
@@ -471,7 +229,9 @@ def save_search(request):
             element=element,
             allergens=allergens,
             num_recipes=num_recipes,
-            recipe_urls=recipe_urls
+            recipe_urls=recipe_urls,
+            percent_safe_recipes=percent_safe_recipes,
+            unsafe_recipes=unsafe_recipes,
         )
     except Exception as e:
         print(e)
@@ -495,6 +255,8 @@ def get_saved_searches(request):
             "num_recipes": search.num_recipes,
             "num_recipes_with_allergen": search.num_recipes_with_allergen,
             "recipe_urls": search.recipe_urls,
+            "percent_safe_recipes": search.percent_safe_recipes,
+            "unsafe_recipes": search.unsafe_recipes,
             "created_at": search.created_at.isoformat(),
             "is_favorite": search.is_favorite,
         })

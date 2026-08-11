@@ -1,5 +1,5 @@
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import GeneralForm from './GeneralForm';
 import { ToastContainer, toast } from 'react-toastify';
@@ -25,12 +25,12 @@ function RegisterForm() {
         }
 
         try {
-            await api.post("api/user/register/", { username, password, confirmPassword, email });
-            const loginRes = await api.post("api/token/", { username, password });
+            await api.post(`${import.meta.env.VITE_API_URL}/api/user/register/`, { username, password, confirmPassword, email });
+            const loginRes = await api.post(`${import.meta.env.VITE_API_URL}/api/token/`, { username, password });
             localStorage.setItem(ACCESS_TOKEN, loginRes.data.access);
             localStorage.setItem(REFRESH_TOKEN, loginRes.data.refresh);
             navigate('/');
-            toast("Successfuly created an account!")
+            toast.success("Successfuly created account!")
         } catch (err) {
             const data = err.response?.data;
             if (data?.username) toast.error(data.username[0]);
@@ -52,7 +52,7 @@ function RegisterForm() {
             requireEmail={false}
             bottomText={
                 <h6>
-                    Already have an account? Click <a href="/login">here</a> to login.
+                    Already have an account? Click <Link to="/login">here</Link> to login.
                 </h6>
             }
         />

@@ -1,5 +1,5 @@
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import GeneralForm from './GeneralForm';
 import { ToastContainer, toast } from 'react-toastify';
@@ -10,12 +10,13 @@ function ChangePasswordForm() {
 
     const handleChangePasswordSubmit = async ({ password, newPassword, confirmPassword }) => {
         try {
-            const res = await api.post('https://dishallgy-backend.onrender.com/api/change_password/', {
+            const res = await api.post(`${import.meta.env.VITE_API_URL}/api/change_password/`, {
                 old_password: password,
                 new_password: newPassword,
                 confirm_password: confirmPassword,  
             });
             navigate('/settings'); 
+            toast.success("Password changed successfully!")
         } catch (err) {
             if (err.status === 401){
                 toast.error("Invalid current password");
@@ -37,7 +38,7 @@ function ChangePasswordForm() {
             passwordDescription={"Current Password"}
             onSubmit={handleChangePasswordSubmit}
             bottomText={
-                <a className="btn btn-primary" href="/settings">Back</a>
+                <Link className="btn btn-primary" to="/settings">Back</Link>
             }
         />
     );

@@ -10,9 +10,9 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 function RecipeDisplay({ recipes, handleDelete, handleFavorite }) {
   if (recipes.length === 0) {
     return (
-        <p style={{ textAlign: "center", width: "100%" }}>
+        <h2 style={{ textAlign: "center", width: "100%" }}>
           No saved recipes yet.
-        </p>
+        </h2>
     );
   }
 
@@ -29,7 +29,7 @@ function RecipeDisplay({ recipes, handleDelete, handleFavorite }) {
             <i className={`bi ${recipe.is_favorite ? "bi-heart-fill" : "bi-heart"}`}></i>
           </button>
 
-          <img src={recipe.image} alt="Loading..." width="300" />
+          <img src={recipe.image} style={{"marginTop": "40px"}} alt="Loading..." width="300" />
 
           <label>
             {recipe.name} (
@@ -66,11 +66,13 @@ function RecipeDisplay({ recipes, handleDelete, handleFavorite }) {
 }
 
 function SearchDisplay({ searches, handleDelete, handleFavorite }) {
-  console.log(searches)
+  const [unsafeRecipesExpanded, setUnsafeRecipesExpanded] = useState([]);
+  const [recipesExpanded, setRecipesExpanded] = useState([]);
+
   return (
     <div className="search-results">
       {searches.length === 0 ? (
-        <p>No saved searches yet.</p>
+        <h2>No saved searches yet.</h2>
       ) : (
         <ul>
           {searches.map((search) => (
@@ -103,16 +105,55 @@ function SearchDisplay({ searches, handleDelete, handleFavorite }) {
               </p>
 
               <p>
-                <strong>Recipe URLs:</strong>
+                <strong>Percent Safe Recipes:</strong> {search.percent_safe_recipes}%
               </p>
 
-              {search.recipe_urls.map((recipe, idx) => (
-                <div key={idx}>
-                  <a href={recipe.website_url} target="_blank" rel="noopener noreferrer">
-                    {recipe.name}
-                  </a>
+
+                {search.type === "cuisine" && (
+                  <>
+                    <p>
+                      <strong>Dishes with allergens:</strong>
+                    </p>
+
+                    {unsafeRecipesExpanded[search.id] ? (
+                    <div>
+                      <button className="btn btn-primary btn-sm" onClick={() => setUnsafeRecipesExpanded(prev => ({...prev,[search.id]: !prev[search.id]}))}>Hide</button>
+                      {search.unsafe_recipes.map((recipe, idx) => (
+                        <div key={idx}>
+                            {recipe}
+                        </div>
+                      ))}
+                    </div>
+                    ) : (
+                      <div>
+                        <button className="btn btn-primary btn-sm" onClick={() => setUnsafeRecipesExpanded(prev => ({...prev,[search.id]: !prev[search.id]}))}>Show</button>
+                      </div>
+                    )}
+                    <p></p> {/* Creates a margin */}
+                  </>
+                )}
+
+              <p>
+                <strong>Safe Recipes:</strong>
+              </p>
+
+              {recipesExpanded[search.id] ? (
+                <div>
+                <button className="btn btn-primary btn-sm" onClick={() => setRecipesExpanded(prev => ({...prev,[search.id]: !prev[search.id]}))}>Hide</button>
+                {search.recipe_urls.map((recipe, idx) => (
+                  <div key={idx}>
+                    <a href={recipe.website_url} target="_blank" rel="noopener noreferrer">
+                      {recipe.name}
+                    </a>
+                  </div>
+                ))}
+              </div>
+              ) : (
+                <div>
+                  <button className="btn btn-primary btn-sm" onClick={() => setRecipesExpanded(prev => ({...prev,[search.id]: !prev[search.id]}))}>Show</button>
                 </div>
-              ))}
+              )}
+              <p></p> {/* Creates a margin */}
 
               <p>
                 <strong>Saved At:</strong>{" "}
@@ -154,17 +195,18 @@ function SavedRecipes() {
   const [searches, setSearches] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [activeForm, setActiveForm] = useState("recipe");
+  const [loading, setLoading] = useState(false);
 
   const getSearches = async () => {
     const res = await api.get(
-      "https://dishallgy-backend.onrender.com/api/get_saved_searches/"
+      `${import.meta.env.VITE_API_URL}/api/get_saved_searches/`
     );
     setSearches(filterObject(res.data.saved_searches));
   };
 
   const getRecipes = async () => {
     const res = await api.get(
-      "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
+      `${import.meta.env.VITE_API_URL}/api/get_saved_recipes/`
     );
     setRecipes(filterObject(res.data.saved_recipes));
   };
@@ -174,11 +216,20 @@ function SavedRecipes() {
   };
 
   useEffect(() => {
-    getSearches();
-    getRecipes();
-    document.title = "Saved Recipes"
-  }, []);
+    const loadData = async () => {
+      setLoading(true);
 
+      await Promise.all([
+        getSearches(),
+        getRecipes()
+      ]);
+
+      setLoading(false);
+    };
+
+    loadData();
+    document.title = "Saved Recipes";
+  }, []);
 
   const handleDelete = async (objectID, objectType) => {
     const confirmDelete = window.confirm(
@@ -188,8 +239,9 @@ function SavedRecipes() {
     if (!confirmDelete) return;
 
     try {
+      const toastId = toast.loading(`Deleting ${title(objectType)}`);
       await api.post(
-        "https://dishallgy-backend.onrender.com/api/delete_saved_recipe_or_search/",
+        `${import.meta.env.VITE_API_URL}/api/delete_saved_recipe_or_search/`,
         {
           objectID,
           objectType,
@@ -205,18 +257,19 @@ function SavedRecipes() {
           prev.filter((item) => item.id !== objectID)
         );
       }
-
-      toast(`${title(objectType)} deleted successfully!`);
+      toast.dismiss(toastId);
+      toast.success(`${title(objectType)} deleted successfully!`)
     } catch (err) {
       console.error(err);
-      toast("Failed to delete item");
+      toast.error("Failed to delete item");
     }
   };
 
   const handleFavorite = async (objectID, objectType) => {
     try {
+      const toastId = toast.loading(`Updating ${title(objectType)}`);
       await api.post(
-        "https://dishallgy-backend.onrender.com/api/favorite_recipe_or_search/",
+        `${import.meta.env.VITE_API_URL}/api/favorite_recipe_or_search/`,
         {
           objectID,
           objectType,
@@ -241,10 +294,11 @@ function SavedRecipes() {
         );
       }
 
-      toast(`${title(objectType)} updated successfully!`);
+      toast.dismiss(toastId)
+      toast.success(`${title(objectType)} updated successfully!`);
     } catch (err) {
       console.error(err);
-      toast("Failed to favorite item");
+      toast.error("Failed to favorite item");
     }
   };
 
@@ -270,19 +324,31 @@ function SavedRecipes() {
         <p>Favorited results are shown first</p>
 
         {activeForm === "search" && (
-          <SearchDisplay
-            searches={searches}
-            handleDelete={handleDelete}
-            handleFavorite={handleFavorite}
-          />
+          loading ? (
+            <div>
+              <h1>Loading...</h1>
+              </div>
+          ) : (
+            <SearchDisplay
+              searches={searches}
+              handleDelete={handleDelete}
+              handleFavorite={handleFavorite}
+            />
+          )
         )}
 
         {activeForm === "recipe" && (
-          <RecipeDisplay
-            recipes={recipes}
-            handleDelete={handleDelete}
-            handleFavorite={handleFavorite}
-          />
+          loading ? (
+            <div>
+              <h1>Loading...</h1>
+              </div>          
+              ) : (
+            <RecipeDisplay
+              recipes={recipes}
+              handleDelete={handleDelete}
+              handleFavorite={handleFavorite}
+            />
+          )
         )}
       </div>
     </Base>

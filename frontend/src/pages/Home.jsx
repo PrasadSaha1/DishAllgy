@@ -4,13 +4,14 @@ import { getUser } from '../components/getUser';
 import { getAllergenInfo } from "../components/getAllergenInfo";
 import  RecipeDisplay  from '../components/RecipeDisplay';
 import { useState, useEffect, useRef } from 'react';
+import { Link } from "react-router-dom";
 import "../styles/Home.css";
 import api from '../api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { all } from 'axios';
 import { title, formatAllergens } from "../components/HelperFunctions";
-import  CuisineAutofill  from "../components/CuisineAutofill";
+import CuisineAutofill from "../components/CuisineAutofill";
 
 const cuisines = [
   "African",
@@ -42,25 +43,21 @@ const cuisines = [
   "Vietnamese"
 ];
 
-function AccountButtons({isLoggedIn, name}){
-    if (isLoggedIn) {
-        return <div>
-            <h2>Welcome {name}</h2>
-        </div>
-    } else {
-        return <div>
-            <h3>Create an account to get started</h3>
-            <a href="/register">
-                <button className="btn btn-primary btn-lg">Create Account</button>
-            </a>
+const allergens = [
+  "Dairy",
+  "Egg",
+  "Gluten",
+  "Grain",
+  "Peanut",
+  "Seafood",
+  "Sesame",
+  "Shellfish",
+  "Soy",
+  "Sulfite",
+  "Tree Nut",
+  "Wheat"
+]
 
-            <h3 style={{marginTop: "50px"}}>Or log into an existing account</h3>
-            <a href="/login">
-                <button className="btn btn-primary btn-lg">Login</button>
-            </a>
-        </div>
-    }
-}
 
 function AllergenList({ allergens, selectedAllergens, onAllergenChange }) {
   return (
@@ -81,45 +78,49 @@ function AllergenList({ allergens, selectedAllergens, onAllergenChange }) {
 
 function DishSearch(){
   return (
-                  <input
-                  className="form-control mt-3"
-                  name="dish"
-                  placeholder="Type in a dish"
-                  style={{ width: "50%", margin: "auto"}}
-                  required
-              />
+    <input
+    className="form-control mt-3"
+    name="dish"
+    placeholder="Type in a dish"
+    style={{ width: "50%", margin: "auto"}}
+    required
+/>
   )
 }
 
 function RecipesWithAllergensDisplay({ recipeNames = [] }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "200px" }}>
-        {recipeNames.map((recipe, index) => (
-          <span
-            key={index}
-            style={{
-              padding: "6px 10px",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              textAlign: "center"
-            }}
-          >
-            {recipe.replace(/Recipe/i, "").trim()}
-          </span>
-        ))}
-      </div>
+    <div className="recipe-with-allergens-grid">
+      {recipeNames.map((recipe, index) => (
+        <span
+          key={index}
+          style={{
+            padding: "6px 10px",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            textAlign: "center"
+          }}
+        >
+          {recipe.replace(/Recipe/i, "").trim()}
+        </span>
+      ))}
     </div>
   );
 }
 
 function SaveSearchDisplay({ isLoggedIn, saveSearch, setSearchSaved, type, searchSaved }) {
       if (isLoggedIn) {
-        if (searchSaved) {
+        if (searchSaved === true) {
           return (
           <div>
             <h3>Search Saved!</h3>
           </div>
+          )
+        } else if (searchSaved === "loading") {
+          return (
+            <div>
+              <h3>Saving Search...</h3>
+            </div>
           )
         } else {
           return (
@@ -132,13 +133,13 @@ function SaveSearchDisplay({ isLoggedIn, saveSearch, setSearchSaved, type, searc
       return (
       <div style={{marginTop: "20px"}}>
         <h4>Create an account to save results!</h4>
-        <a href="/register" className="btn btn-primary btn-md type-button">
+        <Link to="/register" className="btn btn-primary btn-md type-button">
           Create Account
-        </a>
+        </Link>
 
-        <a href="/login" className="btn btn-primary btn-md type-button">
+        <Link to="/login" className="btn btn-primary btn-md type-button">
           Login
-        </a>
+        </Link>
       </div>
       )
     }
@@ -148,24 +149,6 @@ function SaveSearchDisplay({ isLoggedIn, saveSearch, setSearchSaved, type, searc
 
 
 export default function Home() {
-    const [username, setUsername] = useState("");
-
-    // const [allergens, setAllergens] = useState([])
-    const [allergens, setAllergens] = useState([
-  "Dairy",
-  "Egg",
-  "Gluten",
-  "Grain",
-  "Peanut",
-  "Seafood",
-  "Sesame",
-  "Shellfish",
-  "Soy",
-  "Sulfite",
-  "Tree Nut",
-  "Wheat"
-]);
-
     const [recipeSearchResult, setRecipeSearchResult] = useState(null);
     const [cuisineSearchResult, setCuisineSearchResult] = useState(null);
     const [activeForm, setActiveForm] = useState("dish");
@@ -173,9 +156,7 @@ export default function Home() {
 
     const [dishChecked, setDishChecked] = useState(null);
     const [allergensChecked, setAllergensChecked] = useState(null);
-    const [numTotalRecipes, setNumTotalRecipes] = useState(null);
     const [numRecipes, setNumRecipes] = useState(null);
-    const [numRecipesWithAllergen, setNumRecipesWithAllergen] = useState(null);
     const [recipeUrls, setRecipeUrls] = useState(null);
 
     const [dishError, setDishError] = useState(null);
@@ -183,7 +164,6 @@ export default function Home() {
 
     const [cuisineChecked, setCuisineChecked] = useState(null);
     const [allergensChecked_Cuisine, setAllergensChecked_Cuisine] = useState(null);
-    const [numTotalRecipes_Cuisine, setNumTotalRecipes_Cuisine] = useState(null);
     const [numRecipes_Cuisine, setNumRecipes_Cuisine] = useState(null);
     const [numRecipesWithAllergen_Cuisine, setNumRecipesWithAllergen_Cuisine] = useState(null);
     const [recipesWithAllergen_Cuisine, setRecipesWithAllergen_Cuisine] = useState([]);
@@ -191,21 +171,21 @@ export default function Home() {
     const [inRecipeSearch, setInRecipeSearch] = useState(false);
     const [inCuisineSearch, setInCuisineSearch] = useState(false);
 
-    const recipeSourceRef = useRef(null);
-    const cuisineSearchRef = useRef(null);
     const [search, setSearch] = useState("");
-
     const [searchSaved_Dish, setSearchSaved_Dish] = useState(false);
     const [searchSaved_Cuisine, setSearchSaved_Cuisine] = useState(false);
-
-
     const [savedRecipesURLs, setSavedRecipesURLs] = useState([]);
+    const [loadingRecipesUrls, setLoadingRecipesUrls] = useState([])
+
+    const [percentSafeRecipes, setPercentSafeRecipes] = useState(null);
+    const [percentSafeRecipes_Cuisine, setPercentSafeRecipes_Cuisine] = useState(null);
+    const [showUnsafeRecipes_Cuisine, setShowUnsafeRecipes_Cuisine] = useState(null)
 
     const getSavedRecipes = async () => {
       var recipeURLs = [];
       if (isAuthenticated()){
         const res = await api.get(
-          "https://dishallgy-backend.onrender.com/api/get_saved_recipes/"
+          `${import.meta.env.VITE_API_URL}/api/get_saved_recipes/`
         );
               res.data.saved_recipes.forEach(recipe => {
           recipeURLs.push(recipe.url)
@@ -225,18 +205,6 @@ export default function Home() {
     };
 
     useEffect(() => {
-      /*
-        getAllergenInfo().then(allergens => {
-            const keys = Object.keys(allergens.allergens);
-            setAllergens(keys);
-        });
-        */
-
-        getUser().then(user => {
-            if (user) {
-                setUsername(user.username);
-            } 
-        });
         getSavedRecipes();
         document.title = "DishAllgy";
     }, []);
@@ -253,13 +221,11 @@ export default function Home() {
         setInRecipeSearch(true)
         setDishError("")
         setSearchSaved_Dish(false)
-        console.log("uno")
-        const res = await api.post('https://dishallgy-backend.onrender.com/api/search_for_recipes/', {
+        const res = await api.post(`${import.meta.env.VITE_API_URL}/api/search_for_recipes/`, {
             type: "dish",
             query: dishToSend,
             allergens: allergensToSend,
         });      
-        console.log("dos")
 
         setAllergensChecked(allergensToSend)
         setDishChecked(dishToSend)
@@ -275,9 +241,11 @@ export default function Home() {
 
         setRecipeUrls(res.data.recipes)
         setNumRecipes(res.data.recipes.length)
+        setPercentSafeRecipes(res.data.percent_safe_recipes)
                 
     } catch (err) {
       console.error(err);
+      toast.error("Search unsuccessful!")
     }
   };
 
@@ -297,7 +265,7 @@ export default function Home() {
         setInCuisineSearch(true)
         setCuisineError("")
         setSearchSaved_Cuisine(false)
-        const res = await api.post('https://dishallgy-backend.onrender.com/api/search_for_recipes/', {
+        const res = await api.post(`${import.meta.env.VITE_API_URL}/api/search_for_recipes/`, {
             type: "cuisine",
             query: cuisineToSend,
             allergens: allergensToSend,
@@ -315,43 +283,52 @@ export default function Home() {
 
         setRecipeUrls_Cuisine(res.data.recipes)
         setNumRecipes_Cuisine(res.data.recipes.length)
+        setPercentSafeRecipes_Cuisine(res.data.percent_safe_recipes)
+        setRecipesWithAllergen_Cuisine(res.data.recipes_containing_allergen)
                 
     } catch (err) {
       console.error(err);
+      toast.error("Search unsuccessful!")
     }
   };
 
 
     const saveSearch = async (type, setObjectSaved) => {
-      let elementChecked, allergens, numRecipesSend, numRecipesWithAllergenSend, recipeUrlsSend;
+      let elementChecked, allergens, numRecipesSend, recipeUrlsSend, percentSafeRecipesSend, unsafeRecipesSend;
 
       if (type === "dish") {
         elementChecked = dishChecked;
         allergens = allergensChecked;
         numRecipesSend = numRecipes;
         recipeUrlsSend = recipeUrls;
+        percentSafeRecipesSend = percentSafeRecipes;
+        unsafeRecipesSend = [];
       } else {
         elementChecked = cuisineChecked;
         allergens = allergensChecked_Cuisine;
         numRecipesSend = numRecipes_Cuisine;
         recipeUrlsSend = recipeUrls_Cuisine;
+        percentSafeRecipesSend = percentSafeRecipes_Cuisine;
+        unsafeRecipesSend = recipesWithAllergen_Cuisine;
+        
       }
-      setObjectSaved(true);
+      setObjectSaved("loading");
 
       try {
-        const res = await api.post("https://dishallgy-backend.onrender.com/api/save_search/", {
+        const res = await api.post(`${import.meta.env.VITE_API_URL}/api/save_search/`, {
           type: type,
           element: elementChecked,                     
           allergens: allergens,                     
           num_recipes: numRecipesSend,
           recipe_urls: recipeUrlsSend,
+          percent_safe_recipes: percentSafeRecipesSend,
+          unsafe_recipes: unsafeRecipesSend,
         });
-        
-
-        toast("Search saved successfully!");
+        setObjectSaved(true);
+        toast.success("Search saved successfully!");
       } catch (err) {
         console.error("Error saving search:", err);
-        toast("Error saving search!");
+        toast.error("Error saving search!");
       }
     };
 
@@ -359,12 +336,20 @@ export default function Home() {
       if (type === "dish") {
         var allergensToSend = allergensChecked;
         var search = dishChecked;
+        console.log("what the fuck")
       } else {
-        var allergensToSend = allergensChecked2;
+        var allergensToSend = allergensChecked_Cuisine;
         var search = cuisineChecked;
+        console.log("ehausf")
       }
+      console.log(search, cuisineChecked)
 
-      const res = await api.post("https://dishallgy-backend.onrender.com/api/save_recipe/", {
+        setLoadingRecipesUrls(prev => [  
+          ...prev,
+          link
+        ]);
+
+      const res = await api.post(`${import.meta.env.VITE_API_URL}/api/save_recipe/`, {
         recipe_name: name,
         recipe_url: link,
         recipe_image: image,
@@ -372,12 +357,19 @@ export default function Home() {
         allergens: allergensToSend,
         element_name: search,
         });
-        toast("Recipe saved successfully!");
-        setRecipeSaved(true);  // stress test this, maybe put it earlier
-        setSavedRecipesURLs(prev => [
+        toast.success("Recipe saved successfully!");
+        setRecipeSaved(true); 
+
+        // adding to the react state - can't just push
+        setSavedRecipesURLs(prev => [  
           ...prev,
           link
         ]);
+
+        // remove from loading 
+        setLoadingRecipesUrls(prev =>
+          prev.filter(url => url !== link)
+        );
     }
 
   const toggleForm = (type) => {
@@ -410,8 +402,6 @@ export default function Home() {
             
             <DishSearch />
 
-
-
               <button className="form-submit btn btn-success mt-2" type="submit">
                   Submit
               </button>
@@ -431,7 +421,8 @@ export default function Home() {
                 {numRecipes && (
                   <div>
                     <h6>Number of Recipes Found: {numRecipes}</h6>
-                        <SaveSearchDisplay isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"dish"} searchSaved={searchSaved_Dish} setSearchSaved={setSearchSaved_Dish}/>
+                    <h6>Percent of Safe Recipes: {percentSafeRecipes}%</h6>
+                    <SaveSearchDisplay isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"dish"} searchSaved={searchSaved_Dish} setSearchSaved={setSearchSaved_Dish}/>
 
 
                     <h4 style={{ marginTop: "50px" }}>
@@ -443,6 +434,7 @@ export default function Home() {
                       saveRecipe={saveRecipe}
                       type="dish"
                       savedRecipesURLs={savedRecipesURLs}
+                      loadingRecipesUrls={loadingRecipesUrls}
                     />
                   </div>
                 )}
@@ -450,12 +442,6 @@ export default function Home() {
                 {dishError && (
                   <div>
                     <h2 style={{ marginTop: "50px" }}>{dishError}</h2>
-                  </div>
-                )}
-
-                {!numRecipes && !dishError && (
-                  <div>
-                    <h2>Loading...</h2>
                   </div>
                 )}
               </div>
@@ -506,8 +492,19 @@ export default function Home() {
                   {numRecipes_Cuisine && (
                     <div>
                       <h6>Number of Recipes Found: {numRecipes_Cuisine}</h6>
-                        <SaveSearchDisplay isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"dish"} searchSaved={searchSaved_Cuisine} setSearchSaved={setSearchSaved_Cuisine}/>
+                      <h6>Percent of Safe Recipes: {percentSafeRecipes_Cuisine}%</h6>
+                      <SaveSearchDisplay isLoggedIn={isAuthenticated()} saveSearch={saveSearch} type={"cuisine"} searchSaved={searchSaved_Cuisine} setSearchSaved={setSearchSaved_Cuisine}/>
 
+                        <h4 style={{"marginTop": "50px"}}>You should avoid the following dishes from this cuisine as they may have your allergens</h4>
+                        {showUnsafeRecipes_Cuisine ? (
+                          <button style={{"marginBottom": "20px"}} className="btn btn-primary" type="button" onClick={() => setShowUnsafeRecipes_Cuisine(false)}>Hide Unsafe Recipes</button>
+                        ) : (
+                          <button style={{"marginBottom": "20px"}} className="btn btn-primary" type="button" onClick={() => setShowUnsafeRecipes_Cuisine(true)}>Show Unsafe Recipes</button>
+                        )}
+                        {showUnsafeRecipes_Cuisine && (
+                          <RecipesWithAllergensDisplay recipeNames={recipesWithAllergen_Cuisine} />
+                        )}
+                        
                       <h4 style={{ marginTop: "50px" }}>
                         Here are some recipes that don't contain your allergens
                       </h4>
@@ -516,8 +513,9 @@ export default function Home() {
                         recipeUrls={recipeUrls_Cuisine}
                         isLoggedIn={isAuthenticated()}
                         saveRecipe={saveRecipe}
-                        type="dish"
+                        type="cuisine"
                         savedRecipesURLs={savedRecipesURLs}
+                        loadingRecipesUrls={loadingRecipesUrls}
                       />
                     </div>
                   )}
@@ -528,11 +526,6 @@ export default function Home() {
                     </div>
                   )}
 
-                {!numRecipes && !cuisineError && (
-                  <div>
-                    <h2>Loading...</h2>
-                  </div>
-                )}
                 </div>
               )}
 

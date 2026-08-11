@@ -19,12 +19,12 @@ function ResetPasswordForm() {
         }
 
         try {
-            await api.post('/api/reset_password_confirm/', {
+            await api.post(`${import.meta.env.VITE_API_URL}/api/reset_password_confirm/`, {
                 uid,
                 token,
                 new_password: newPassword,
             });
-            toast("Password reset successfully. You can now log in.");
+            toast.success("Password reset successfully. You can now log in.");
             navigate('/login');
         } catch (err) {
             const data = err.response?.data;
@@ -42,7 +42,7 @@ function ResetPasswordForm() {
             showConfirmPassword={true}
             bottomText={
                 <h6>
-                    Back to <a href="/login">Login</a>
+                    Back to <Link to="/login">Login</Link>
                 </h6>
             }
         />

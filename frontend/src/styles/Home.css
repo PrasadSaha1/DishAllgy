@@ -90,8 +90,23 @@
     background-color: #f1f1f1;
 }
 
+.recipe-with-allergens-grid {
+    display: grid;
+    justify-content: center;
+    width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+}
+
+.recipes-with-allergens {
+  display: flex;
+  flex-direction: column;
+
+}
+
 @media (max-width: 640px) {
   .recipe-grid {
     display: block; /* stack elements vertically */
   }
 }
+

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Base from '../components/Base';
 import api from '../api';
 import { getUser } from '../components/getUser';
@@ -9,13 +9,13 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function DetermineEmail({email}) {
     if (email.includes("@")) {
-        return  <a href="/change_email"> <button className="btn btn-primary btn-md mb-3">
+        return  <Link to="/change_email"> <button className="btn btn-primary btn-md mb-3">
             Change Email
-            </button> </a>
+            </button> </Link>
     } else {
-        return  <a href="/add_email"> <button className="btn btn-primary btn-md mb-3">
+        return  <Link to="/add_email"> <button className="btn btn-primary btn-md mb-3">
             Add Email
-            </button> </a>
+            </button> </Link>
     }
 }
 
@@ -23,6 +23,7 @@ export default function Settings() {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         getUser().then(user => {
@@ -33,6 +34,7 @@ export default function Settings() {
                 } else {
                     setEmail("Not Provided");
                 }
+                setLoading(false);
             } 
         });
         document.title = "Settings";
@@ -44,6 +46,7 @@ export default function Settings() {
     if (confirmLogout) {
         localStorage.clear();
         navigate('/');
+        toast.success("Logged out successfully!")
     }
   };
 
@@ -53,43 +56,55 @@ export default function Settings() {
         await api.delete('api/delete_account/');
         localStorage.clear();
         navigate('/');
+        toast.success("Account deleted successfully!")
 
     };
 
   return (
-    <Base>
-      <div className="settings-container">
+<Base>
+  <div className="settings-container">
+    {loading ? (
+      <div>
+        <h1>Loading...</h1>
+      </div>
+    ) : (
+      <>
         <h1>Account Settings</h1>
         <h4>Logged in as {username}</h4>
         <h4>Email: {email}</h4>
 
         <div className="d-flex flex-column align-items-center mt-4">
-            <DetermineEmail email={email}/>
+          <DetermineEmail email={email} />
 
-            <a href="/change_username"> <button className="btn btn-warning btn-md mb-3">
-            Change Username
-            </button> </a>
+          <Link to="/change_username">
+            <button className="btn btn-warning btn-md mb-3">
+              Change Username
+            </button>
+          </Link>
 
-            <a href="/change_password"> <button className="btn btn-success btn-md mb-5">
-            Change Password
-            </button> </a>
-            
-            <button onClick={handleLogout} className="btn btn-danger btn-md mb-3">
+          <Link to="/change_password">
+            <button className="btn btn-success btn-md mb-5">
+              Change Password
+            </button>
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="btn btn-danger btn-md mb-3"
+          >
             Log Out
-            </button>
+          </button>
 
-            <button onClick={handleDeleteAccount} className="btn btn-danger btn-md mb-3">
+          <button
+            onClick={handleDeleteAccount}
+            className="btn btn-danger btn-md mb-3"
+          >
             Delete Account
-            </button>
+          </button>
         </div>
-
-
-      </div>
-      <div className="d-flex justify-content-center">
-        <a href="/contact_us"> <button className="btn btn-info btn-md mb-3">
-          Contact Us
-        </button></a>
-      </div>
-    </Base>
+      </>
+    )}
+  </div>
+</Base>
   );
 }
