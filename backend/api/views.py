@@ -195,7 +195,7 @@ def contact_us(request):
     settings.EMAIL_USE_TLS,
     settings.EMAIL_HOST_USER,
     settings.EMAIL_HOST_PASSWORD,
-    settings.DEFAULT_FROM_EMAIL
+    settings.DEFAULT_FROM_EMAIL, flush=True
     )
     send_mail(
         subject,
