@@ -88,11 +88,7 @@ function App() {
         </RedirectLoggedOut>
       } />
 
-      <Route path="/contact_us" element={
-        <RedirectLoggedOut>
-          <ContactUs />
-        </RedirectLoggedOut>
-      } />
+      <Route path="/contact_us" element={<ContactUs />}/>
 
       <Route path="/reset_password/:uid/:token" element={<ResetPassword />} />
       <Route path="/" element={<Home />} />
