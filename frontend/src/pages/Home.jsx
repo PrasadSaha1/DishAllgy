@@ -382,7 +382,7 @@ export default function Home() {
     <Base>
       <div className="text-center">
         <h1>DishAllgy</h1>
-        <h4>Find recipes for a certain dish or cuisine that avoid your allergens (test)</h4>
+        <h4>Find recipes for a certain dish or cuisine that avoid your allergens</h4>
         <h6>Note: please verify all recipes before using them</h6>
 
         <div className="search-container">

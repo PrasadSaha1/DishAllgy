@@ -18,7 +18,7 @@ function About() {
         <p>Have a question, want to report a bug, or speak to DishAllgy's developers for another reason? Contact us <Link to="/contact_us">here</Link>.</p>
 
         <h1 style={{ marginTop: '50px' }}>History</h1>
-        <p>August Xth, 2026: Offcially Launched</p>
+        <p>August 12th, 2026: Offcially Launched</p>
 
     </div>
     </Base>

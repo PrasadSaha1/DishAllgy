@@ -28,7 +28,10 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem(REFRESH_TOKEN);
 
       if (!refreshToken) {
-        return Promise.reject(error); // No refresh token, can't retry
+        localStorage.removeItem(ACCESS_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN);
+        window.location.href = '/';
+        return Promise.reject(error);
       }
 
       try {
