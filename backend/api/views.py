@@ -188,15 +188,7 @@ def contact_us(request):
     message = request.data.get("message")
     
     final_message = f"Username: {request.user.username}\nEmail: {email} \nmessage: {message}"
-    print(
-    settings.EMAIL_BACKEND,
-    settings.EMAIL_HOST,
-    settings.EMAIL_PORT,
-    settings.EMAIL_USE_TLS,
-    settings.EMAIL_HOST_USER,
-    settings.EMAIL_HOST_PASSWORD,
-    settings.DEFAULT_FROM_EMAIL, flush=True
-    )
+
     send_mail(
         subject,
         final_message,
