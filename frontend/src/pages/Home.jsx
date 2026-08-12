@@ -217,11 +217,15 @@ export default function Home() {
     var dishToSend = formData.get('dish');
     var allergensToSend = selectedAllergens;
 
+    if (!/^[a-zA-Z0-9 ]+$/.test(dishToSend)) {
+      toast.error("No special symbols allowed!")
+      return;
+    }
+
     try {
         setInRecipeSearch(true)
         setDishError("")
         setSearchSaved_Dish(false)
-        console.log("API URL:", import.meta.env.VITE_API_URL);
         const res = await api.post(`${import.meta.env.VITE_API_URL}/api/search_for_recipes/`, {
             type: "dish",
             query: dishToSend,
@@ -234,7 +238,7 @@ export default function Home() {
         setInRecipeSearch(false)
 
         if (res.data.recipes.length === 0){
-          setDishError("No results found. Input may be invalid")
+          setDishError("No results found. Input may be invalid, or no recipes avoid your allergens")
           setRecipeUrls("")
           setNumRecipes("")
           return;
@@ -278,7 +282,7 @@ export default function Home() {
         setCuisineChecked(cuisineToSend)
 
         if (res.data.recipes.length === 0){
-          setCuisineError("No results found. Input may be invalid")
+          setCuisineError("No results found. Input may be invalid, or no recipes avoid your allergens")
           return;
         }
 
@@ -337,13 +341,10 @@ export default function Home() {
       if (type === "dish") {
         var allergensToSend = allergensChecked;
         var search = dishChecked;
-        console.log("what the fuck")
       } else {
         var allergensToSend = allergensChecked_Cuisine;
         var search = cuisineChecked;
-        console.log("ehausf")
       }
-      console.log(search, cuisineChecked)
 
         setLoadingRecipesUrls(prev => [  
           ...prev,
@@ -386,13 +387,13 @@ export default function Home() {
 
         <div className="search-container">
           <div className="type-button-container">
-            <button className="type-button btn btn-primary" onClick={() => toggleForm('dish')}>Recipe</button>
+            <button className="type-button btn btn-primary" onClick={() => toggleForm('dish')}>Dish</button>
             <button className="type-button btn btn-primary" onClick={() => toggleForm('cuisine')}>Cuisine</button>
           </div>
 
           {activeForm === "dish" && (
             <form id="recipeForm" onSubmit={handleRecipeSubmit}>
-              <h2>Search for recipes with allergens</h2>
+              <h2>Find safe recipes for a dish</h2>
               <h6>Specify your allergens and type in the dish</h6>
 
             <AllergenList
@@ -401,8 +402,16 @@ export default function Home() {
               onAllergenChange={handleAllergenChange}
             />
             
-            <DishSearch />
+<div className="input-container">
+    <DishSearch />
 
+    <span className="help-icon">
+        ?
+        <span className="tooltip">
+            To get better results, try to keep searches broad, and avoid special symbols.
+        </span>
+    </span>
+</div>
               <button className="form-submit btn btn-success mt-2" type="submit">
                   Submit
               </button>
@@ -442,7 +451,7 @@ export default function Home() {
 
                 {dishError && (
                   <div>
-                    <h2 style={{ marginTop: "50px" }}>{dishError}</h2>
+                    <h4 style={{ marginTop: "50px" }}>{dishError}</h4>
                   </div>
                 )}
               </div>
@@ -453,7 +462,7 @@ export default function Home() {
 
           {activeForm === "cuisine" && (
             <form id="cuisineForm" onSubmit={handleCuisineSubmit}>
-              <h2>Search for cuisines with allergens</h2>
+              <h2>Find safe recipes for a cuisine</h2>
               <h6>Specify your allergens and type in the cuisine</h6>
 
             <AllergenList
@@ -462,7 +471,8 @@ export default function Home() {
               onAllergenChange={handleAllergenChange}
             />
 
-            <CuisineAutofill
+            <div className="input-container">
+              <CuisineAutofill
                 className="form-control mt-3"
                 name="cuisine"
                 suggestions={cuisines}
@@ -472,6 +482,16 @@ export default function Home() {
                 style={{ width: "50%", margin: "auto"}}
                 required
             />
+
+                <span className="help-icon">
+                    ?
+                    <span className="tooltip">
+                        For better results, keep searches broad and avoid special symbols.
+                    </span>
+                </span>
+            </div>
+
+
 
               <button className="form-submit btn btn-success mt-2" type="submit">
                   Submit
@@ -523,7 +543,7 @@ export default function Home() {
 
                   {cuisineError && (
                     <div>
-                      <h2 style={{ marginTop: "50px" }}>{cuisineError}</h2>
+                      <h4 style={{ marginTop: "50px" }}>{cuisineError}</h4>
                     </div>
                   )}
 

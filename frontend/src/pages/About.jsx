@@ -5,6 +5,11 @@ function About() {
     return <Base>
     <div className="text-center">
         <h1 >DishAllgy</h1>
+        <img
+    src="/dishallgy_logo.png"
+    alt="DishAllgy logo"
+    style={{ width: '200px' }}
+/>
         <p>DishAllgy was created to provide a resource for those with allergens to find recipes for dishes and cuisines that avoid their allergens.
             It uses Spoonacular's API to find recipes that match the user's request.
             Users should always verify recipes by looking at the provided link to ensure that it is free of their allergens,
